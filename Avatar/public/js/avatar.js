@@ -7,42 +7,24 @@ let personajeJugador = "";
 let personajeEnemigo = "";
 
 // Nodos del DOM
-let spanPersonajeJugador;
-let spanPersonajeEnemigo;
-let spanVidasJugador;
-let spanVidasEnemigo;
-let sectionMensajes;
-let consolaLog; // Nodo de la consola de debug
+const spanPersonajeJugador = document.getElementById('personaje-jugador');
+const spanPersonajeEnemigo = document.getElementById('personaje-enemigo');
+const spanVidasJugador = document.getElementById('vidas-jugador');
+const spanVidasEnemigo = document.getElementById('vidas-enemigo');
+const sectionMensajes = document.getElementById('mensajes');
+const consolaLog = document.getElementById('consola-log');
 
-let botonPersonajeJugador;
-let botonPunio;
-let botonPatada;
-let botonBarrida;
-let botonReiniciar;
+const botonPersonajeJugador = document.getElementById('boton-personaje');
+const botonPunio = document.getElementById('boton-punio');
+const botonPatada = document.getElementById('boton-patada');
+const botonBarrida = document.getElementById('boton-barrida');
+const botonReiniciar = document.getElementById('boton-reiniciar');
 
-let popupReglas;
-let botonReglas;
-let botonCerrarReglas;
+const popupReglas = document.getElementById('popup-reglas');
+const botonReglas = document.getElementById('boton-reglas');
+const botonCerrarReglas = document.getElementById('boton-cerrar-reglas');
 
 function iniciarJuego() {
-    // Captura de referencias al DOM
-    spanPersonajeJugador = document.getElementById('personaje-jugador');
-    spanPersonajeEnemigo = document.getElementById('personaje-enemigo');
-    spanVidasJugador = document.getElementById('vidas-jugador');
-    spanVidasEnemigo = document.getElementById('vidas-enemigo');
-    sectionMensajes = document.getElementById('mensajes');
-    consolaLog = document.getElementById('consola-log');
-
-    botonPersonajeJugador = document.getElementById('boton-personaje');
-    botonPunio = document.getElementById('boton-punio');
-    botonPatada = document.getElementById('boton-patada');
-    botonBarrida = document.getElementById('boton-barrida');
-    botonReiniciar = document.getElementById('boton-reiniciar');
-
-    popupReglas = document.getElementById('popup-reglas');
-    botonReglas = document.getElementById('boton-reglas');
-    botonCerrarReglas = document.getElementById('boton-cerrar-reglas');
-
     // Registros de eventos
     botonPersonajeJugador.addEventListener('click', seleccionarPersonajeJugador);
     botonPunio.addEventListener('click', ataquePunio);
