@@ -12,6 +12,7 @@ const displayCart = () => {
     const modalHeader = document.createElement("div");
     const modalClose = document.createElement("div");
     modalClose.innerText = "❌";
+    modalClose.dataset.title = "Cerrar";
     modalClose.className = "modal-close";
     modalHeader.append(modalClose);
 
@@ -41,12 +42,12 @@ const displayCart = () => {
                         <h4>${product.productName}</h4>
                     </div>
                     <div class="quantity">
-                        <span class="quantity-btn-decrese">➖</span>
+                        <span class="quantity-btn-decrese" data-title="Restar producto">➖</span>
                         <span class="quantity-input">${product.quanty}</span>
-                        <span class="quantity-btn-increse">➕</span>
+                        <span class="quantity-btn-increse" data-title="Sumar producto">➕</span>
                     </div>
                     <div class="price">$ ${product.price * product.quanty}</div>
-                    <div class="delete-product">❌</div>
+                    <div class="delete-product" data-title="Eliminar producto">❌</div>
                 </div>
             `;
             modalContainer.append(modalBody);
@@ -87,7 +88,7 @@ const displayCart = () => {
         modalContainer.append(modalFooter);
 
         // Mercado pago
-        const mercadopago = new MercadoPago("APP_USR-b2cc738f-99d2ed0e722c", {
+        const mercadopago = new MercadoPago("APP_USR-abcdef123-9999-1234-1234-99d2ed0e722c", {
             locale: "es-AR",
         });
 

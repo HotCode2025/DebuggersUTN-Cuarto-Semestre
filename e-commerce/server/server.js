@@ -2,12 +2,13 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const path = require("path");
+const url_respuesta = "https://unfixed-unvarying-elves.ngrok-free.dev";
 
 const { MercadoPagoConfig, Preference } = require("mercadopago");
 
 // Access Token de Mercado Pago
 const client = new MercadoPagoConfig({
-  accessToken: "APP_USR-6425965593051519-6225c8bcf5502f4df076b7a5fd342133",
+  accessToken: "APP_USR-123456789012343-abcdef-6225c8bcf5123456789fd342133-abcdefghijk",
 });
 
 app.use(cors());
@@ -31,11 +32,11 @@ app.post("/create_preference", async (req, res) => {
                 },
             ],
             back_urls: {
-                success: "http://localhost:8080/",
-                failure: "http://localhost:8080/",
-                pending: "",
+                success: url_respuesta,
+                failure: url_respuesta,
+                pending: url_respuesta,
             },
-            //auto_return: "approved",
+            auto_return: "approved",
             },
         });
 

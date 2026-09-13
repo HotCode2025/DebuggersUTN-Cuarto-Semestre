@@ -235,3 +235,38 @@ header, h1 {
 #button-checkout {
     z-index: 10;
 }
+
+/* --------------------- */
+/* Prepara el contenedor del tooltip */
+[data-title] {
+    position: relative;
+    cursor: pointer;
+}
+
+/* Diseña la cajita del mensaje */
+[data-title]::after {
+    content: attr(data-title);
+    position: absolute;
+    bottom: 125%; /* Aparece por encima del elemento */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #222222;
+    color: #ffffff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Efecto al pasar el mouse */
+[data-title]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-4px); /* Pequeña animación hacia arriba */
+}

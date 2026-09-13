@@ -1,15 +1,15 @@
-# Checkout payment processing with Checkout Pro
+# E-Commerce con integración de Mercado Pago
+## Desarrollado en NodeJS Server con Express
 
-## Using a NodeJS server with Express
+### Requerimientos
+- Node v20 o superior
+- Para la integracion con Mercado Pago (https://www.mercadopago.com.ar/developers/es/docs/getting-started)
+- Obtener y configurar las credenciales y variables: 
+  - `PUBLIC_KEY`y `YOUR_LOCALE` en `client\js\cart.js`
+  - `ACCESS_TOKEN` en `server.js`
 
-### Requirements
-- Node v10 or higher
-- Read our [testing instructions](https://www.mercadopago.com/developers/en/guides/online-payments/checkout-pro/test-integration)
-- Setup your credentials and variables: 
-  - `PUBLIC_KEY`and `YOUR_LOCALE` on client-side and locale `cart.js`
-  - Private `ACCESS_TOKEN` on server-side `server.js`
-
-### How to run it
+### Para ejecutar el proyecto
 - npm install
 - npm start
-- Navigate to http://localhost:8080 on your browser
+- Para el entorno de pruebas http://localhost:8080 en cualquier navegador
+
