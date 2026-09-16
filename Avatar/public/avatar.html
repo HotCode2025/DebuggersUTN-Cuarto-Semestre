@@ -12,7 +12,9 @@
         <h1>&nbsp;AVATAR 💧 🔥 🌪️ 🌱&nbsp;</h1>
 
         <button id="boton-reglas">Reglas</button>
+        <button id="boton-abrir-generar">Generar Varios 🎲</button>
         
+        <!-- ------------------------------------------------------------------------------------------------- -->
         <!-- Consola lateral de historial -->
         <div id="historial-consola">
             <div class="consola-titulo">> HISTORIAL_DE_BATALLA</div>
@@ -21,6 +23,8 @@
             </div>
         </div>
 
+        <!-- ------------------------------------------------------------------------------------------------- -->
+        <!-- Popup Reglas -->
         <dialog id="popup-reglas">
             <section id="mostrar-reglas" style="margin-bottom: 0; box-shadow: none; padding: 10px; text-align: left;">
                 <h3>Reglas del Juego</h3>
@@ -41,20 +45,25 @@
             </section>
         </dialog>
 
+        <!-- ------------------------------------------------------------------------------------------------- -->
+        <!-- Popup Generar Múltiples Personajes -->
+        <dialog id="popup-generar">
+            <section style="margin-bottom: 0; box-shadow: none; padding: 10px; text-align: center;">
+                <h3>Generar Personajes Aleatorios</h3>
+                <label for="input-cantidad">¿Cuántos personajes quieres crear?:</label><br><br>
+                <input type="number" id="input-cantidad" min="1" max="20" value="5" /><br><br>
+                
+                <button id="boton-generar-multiples">Generar</button>
+                <button id="boton-cerrar-generar" style="background-color: #64748b;">Cancelar</button>
+            </section>
+        </dialog>
+
         <section id="seleccionar-personaje">
             <h2>Elige tu Personaje</h2>
 
-            <label for="zuko">Zuko</label>
-            <input type="radio" name="personaje" id="zuko"/>
-
-            <label for="katara">Katara</label>
-            <input type="radio" name="personaje" id="katara"/>
-
-            <label for="aang">Aang</label>
-            <input type="radio" name="personaje" id="aang"/>
-
-            <label for="toph">Toph</label>
-            <input type="radio" name="personaje" id="toph"/>
+            <!-- ------------------------------------------------------------------------------------------------- -->
+            <!-- Contenedor dinámico inyectado por JS -->
+            <div id="contenedor-tarjetas"></div>
 
             <br><br>
             <button id="boton-personaje">Seleccionar</button>
@@ -77,10 +86,13 @@
         </section>
 
         <section id="reiniciar">
-            <button id="boton-reiniciar">Reiniciar</button>
+            <button id="boton-cambiar-personaje">Elegir Otro Personaje 🔄</button>
+            <button id="boton-reiniciar">Reiniciar Todo 💥</button>
         </section>
     </div>
 
+    <!-- ------------------------------------------------------------------------------------------------- -->
+     <!-- carga script -->
     <script src="./js/avatar.js"></script>
 </body>
 </html>
