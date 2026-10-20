@@ -122,3 +122,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "accounts.User"
+
+# Dirección utilizada para acceder a los archivos cargados.
+MEDIA_URL = "/media/"
+
+# Carpeta local donde se guardan las imágenes de productos.
+MEDIA_ROOT = BASE_DIR / "media"
