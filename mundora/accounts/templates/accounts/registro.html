@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear cuenta | MUNDORA</title>
+</head>
+<body>
+    <main>
+        <h1>Creá tu cuenta en MUNDORA</h1>
+
+        <p>
+            Completá tus datos para registrarte.
+            Podés agregar tu domicilio más adelante.
+        </p>
+
+        <!-- Muestra las confirmaciones de la operación. -->
+        {% if messages %}
+            <div role="status">
+                {% for mensaje in messages %}
+                    <p>{{ mensaje }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Envía los datos de registro de forma protegida. -->
+        <form method="post">
+            {% csrf_token %}
+
+            {{ formulario.non_field_errors }}
+
+            {% for campo in formulario %}
+                <div>
+                    {{ campo.label_tag }}
+                    {{ campo }}
+
+                    {% if campo.help_text %}
+                        <div id="{{ campo.auto_id }}_helptext">
+                            {{ campo.help_text|safe }}
+                        </div>
+                    {% endif %}
+
+                    {{ campo.errors }}
+                </div>
+            {% endfor %}
+
+            <button type="submit">Crear cuenta</button>
+        </form>
+        <p>
+        ¿Ya tenés una cuenta?
+        <a href="{% url 'accounts:iniciar_sesion' %}">Iniciá sesión</a>
+    </p>
+    </main>
+</body>
+</html>

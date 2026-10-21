@@ -128,3 +128,13 @@ MEDIA_URL = "/media/"
 
 # Carpeta local donde se guardan las imágenes de productos.
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Permite autenticar mediante correo o nombre de usuario.
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.AutenticacionCorreoUsuario",
+]
+
+# Define los destinos del inicio y cierre de sesión.
+LOGIN_URL = "accounts:iniciar_sesion"
+LOGIN_REDIRECT_URL = "accounts:mi_cuenta"
+LOGOUT_REDIRECT_URL = "accounts:iniciar_sesion"

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión | MUNDORA</title>
+</head>
+<body>
+    <main>
+        <h1>Ingresá a MUNDORA</h1>
+
+        <!-- Muestra la confirmación después del registro. -->
+        {% if messages %}
+            <div role="status">
+                {% for mensaje in messages %}
+                    <p>{{ mensaje }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Solicita las credenciales para iniciar sesión. -->
+        <form method="post">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            {% for campo in form %}
+                <p>
+                    {{ campo.label_tag }}
+                    {{ campo }}
+                    {{ campo.errors }}
+                </p>
+            {% endfor %}
+
+            <!-- Conserva el destino de una página protegida. -->
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            <button type="submit">Iniciar sesión</button>
+        </form>
+
+        <p>
+            ¿Todavía no tenés cuenta?
+            <a href="{% url 'accounts:registro' %}">Registrate</a>
+        </p>
+    </main>
+</body>
+</html>

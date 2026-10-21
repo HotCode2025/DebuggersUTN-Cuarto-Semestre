@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi cuenta | MUNDORA</title>
+</head>
+<body>
+    <main>
+        <h1>Mi cuenta</h1>
+
+        <!-- Muestra los datos del usuario autenticado. -->
+        <p>Hola, {{ request.user.first_name|default:request.user.username }}.</p>
+
+        <dl>
+            <dt>Nombre de usuario</dt>
+            <dd>{{ request.user.username }}</dd>
+
+            <dt>Correo electrónico</dt>
+            <dd>{{ request.user.email }}</dd>
+
+            <dt>Teléfono</dt>
+            <dd>{{ request.user.telefono|default:"Sin completar" }}</dd>
+        </dl>
+
+        <!-- Cierra la sesión con protección CSRF. -->
+        <form method="post" action="{% url 'accounts:cerrar_sesion' %}">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesión</button>
+        </form>
+    </main>
+</body>
+</html>

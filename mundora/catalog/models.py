@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal
+from django.db import models
 
 from django.core.validators import MinValueValidator
 
@@ -347,3 +348,5 @@ class ImagenProducto(models.Model):
         """Identifica la fotografía y su posición en la galería."""
 
         return f"{self.producto.nombre} - Imagen {self.orden}"
+
+
