@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import timezone
 
 from .models import Categoria, ImagenProducto, Producto, Tienda, Variante
 
@@ -6,12 +7,15 @@ from .forms import(
     ConjuntoImagenesProducto,
     ConjuntoVariantesProducto,
     FormularioProducto,
+    FormularioTienda,
 )
 
 
 @admin.register(Tienda)
 class AdministradorTienda(admin.ModelAdmin):
     """Configura la gestión de tiendas en el panel administrativo."""
+        # Aplica las validaciones de revisión de tiendas.
+    form = FormularioTienda
 
     # Columnas del listado de tiendas.
     list_display = (
@@ -37,7 +41,26 @@ class AdministradorTienda(admin.ModelAdmin):
         "fecha_creacion",
         "fecha_actualizacion",
     )
+    
+    def save_model(self, request, obj, form, change):
+        """Guarda la tienda y pausa productos si no está aprobada."""
 
+        super().save_model(request, obj, form, change)
+
+        if obj.estado != Tienda.Estado.APROBADA:
+            cantidad = obj.productos.filter(
+                publicado=True,
+            ).update(
+                publicado=False,
+                fecha_actualizacion=timezone.now(),
+            )
+
+            if cantidad:
+                self.message_user(
+                    request,
+                    f"Se pausaron {cantidad} publicaciones porque "
+                    "la tienda no está aprobada.",
+                )
 
 @admin.register(Categoria)
 class AdministradorCategoria(admin.ModelAdmin):

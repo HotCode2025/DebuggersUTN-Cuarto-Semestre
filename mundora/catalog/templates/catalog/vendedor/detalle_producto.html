@@ -29,6 +29,13 @@
         Editar producto
     </a>
 </p>
+<!-- Abre la administración de variantes del producto. -->
+<p>
+    <a href="{% url 'vendedores:gestionar_variantes' producto.pk %}">
+        Administrar variantes
+    </a>
+</p>
+
         <!-- Muestra la información privada de la publicación. -->
         <section>
             <h2>Datos del producto</h2>
@@ -66,12 +73,91 @@
             {% endif %}
         </section>
 
+        <!-- Permite controlar la publicación del producto. -->
+    <section>
+         <h2>Administrar publicación</h2>
+
+            {% if producto.estado_revision == "rechazado" %}
+                <p>
+                    Revisá las observaciones del administrador y guardá
+                    las correcciones antes de solicitar una nueva revisión.
+                </p>
+
+                <p>
+                    Al solicitarla, el producto quedará publicado
+                    provisionalmente con el aviso de que no está verificado.
+                </p>
+
+                <form
+                    method="post"
+                    action="{% url 'vendedores:cambiar_publicacion' producto.pk %}"
+                >
+                    {% csrf_token %}
+                    <input
+                        type="hidden"
+                        name="accion"
+                        value="solicitar_revision"
+                    >
+
+                    <button type="submit">Solicitar nueva revisión</button>
+                </form>
+
+            {% elif producto.publicado %}
+                {% if producto.estado_revision == "pendiente" %}
+                    <p>
+                        La publicación está activa, pero todavía
+                        se encuentra en revisión.
+                    </p>
+                {% else %}
+                    <p>La publicación está activa y verificada.</p>
+                {% endif %}
+
+                <form
+                    method="post"
+                    action="{% url 'vendedores:cambiar_publicacion' producto.pk %}"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="pausar">
+
+                    <button type="submit">Pausar publicación</button>
+                </form>
+
+            {% else %}
+                <p>El producto está sin publicar.</p>
+
+                {% if producto.estado_revision == "pendiente" %}
+                    <p>
+                        Podés publicarlo mientras se revisa.
+                        Se identificará como una publicación no verificada.
+                    </p>
+                {% endif %}
+
+                <form
+                    method="post"
+                    action="{% url 'vendedores:cambiar_publicacion' producto.pk %}"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="publicar">
+
+                    <button type="submit">Publicar producto</button>
+                </form>
+            {% endif %}
+        </section>  
+
         <!-- Detalla las variantes, incluidos los registros inactivos. -->
         <section>
             <h2>Variantes</h2>
 
             <ul>
                 {% for variante in producto.variantes.all %}
+                    <!-- Muestra la fotografía específica de la variante. -->
+                    {% if variante.imagen %}
+                        <img
+                            src="{{ variante.imagen.url }}"
+                            alt="{{ producto.nombre }} — {{ variante.color|default:'variante estándar' }}"
+                            width="180"
+                        >
+                    {% endif %}
                     <li>
                         <p>
                             Color: {{ variante.color|default:"Sin especificar" }}.
@@ -94,6 +180,13 @@
         <!-- Muestra las fotografías cargadas en la galería. -->
         <section>
             <h2>Galería</h2>
+
+                <!-- Abre la edición de las fotografías generales del producto. -->
+                <p>
+                    <a href="{% url 'vendedores:gestionar_galeria' producto.pk %}">
+                    Administrar galería
+                    </a>
+                </p>
 
             {% for foto in producto.imagenes.all %}
                 {% if foto.imagen %}

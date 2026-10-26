@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Variantes | MUNDORA</title>
+</head>
+<body>
+    <main>
+        <h1>Variantes de {{ producto.nombre }}</h1>
+
+        <p>
+            Administrá las características, el precio y el stock
+            de cada variante. Los precios se expresan en pesos argentinos.
+        </p>
+
+        <p>
+            Para agregar una variante, completá la fila adicional.
+            Si la empezaste a completar y querés descartarla,
+            marcá «Eliminar».
+        </p>
+
+        <p>
+            Podés desmarcar «Activa» para retirar una variante
+            de la venta conservando su registro.
+        </p>
+
+        {% if producto.publicado %}
+            <p>
+                Como el producto está publicado, debe conservar
+                al menos una variante activa.
+            </p>
+        {% endif %}
+
+        {% if producto.estado_revision == "aprobado" %}
+            <p>
+                Cambiar características o imágenes, agregar variantes
+                o eliminarlas hará que el producto vuelva a revisión.
+                Cambiar solamente precio, stock o disponibilidad
+                conserva la verificación.
+            </p>
+        {% elif producto.estado_revision == "rechazado" %}
+            <p>
+                Guardar correcciones no reactiva la publicación.
+                El producto seguirá rechazado.
+            </p>
+        {% endif %}
+
+        <!-- Permite enviar datos e imágenes con protección CSRF. -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Identifica la cantidad de formularios enviados. -->
+            {{ conjunto.management_form }}
+            {{ conjunto.management_form.errors }}
+            {{ conjunto.non_form_errors }}
+
+            {% for formulario in conjunto %}
+                <fieldset>
+                    <legend>
+                        {% if formulario.instance.pk %}
+                            Variante {{ forloop.counter }}
+                        {% else %}
+                            Nueva variante
+                        {% endif %}
+                    </legend>
+
+                    {{ formulario.non_field_errors }}
+
+                    <!-- Conserva los identificadores de cada variante. -->
+                    {% for campo in formulario.hidden_fields %}
+                        {{ campo }}
+                        {{ campo.errors }}
+                    {% endfor %}
+
+                    {% for campo in formulario.visible_fields %}
+                        <p>
+                            {{ campo.label_tag }}
+                            {{ campo }}
+
+                            {% if campo.help_text %}
+                                <small>{{ campo.help_text }}</small>
+                            {% endif %}
+
+                            {{ campo.errors }}
+                        </p>
+                    {% endfor %}
+
+                    {% if formulario.instance.imagen %}
+                        <p>Imagen guardada:</p>
+                        <img
+                            src="{{ formulario.instance.imagen.url }}"
+                            alt="Imagen de la variante de {{ producto.nombre }}"
+                            width="180"
+                        >
+                    {% endif %}
+                </fieldset>
+            {% endfor %}
+
+            <p>
+                <button type="submit">Guardar variantes</button>
+            </p>
+        </form>
+
+        <a href="{% url 'vendedores:detalle_producto' producto.pk %}">
+            Volver al producto
+        </a>
+    </main>
+</body>
+</html>

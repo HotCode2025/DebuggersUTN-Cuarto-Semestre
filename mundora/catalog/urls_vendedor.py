@@ -33,4 +33,22 @@ urlpatterns = [
         views_vendedor.editar_producto_vendedor,
         name="editar_producto",
     ),
+    # Permite gestionar las variantes de un producto propio.
+    path(  
+        "productos/<int:producto_id>/variantes/",
+        views_vendedor.gestionar_variantes_vendedor,
+        name="gestionar_variantes",
+    ),
+    # Permite administrar la galería de un producto propio.
+    path(
+        "productos/<int:producto_id>/galeria/",
+        views_vendedor.gestionar_galeria_vendedor,
+        name="gestionar_galeria",
+    ),
+    # Cambia el estado de publicación mediante una solicitud POST.
+    path(
+        "productos/<int:producto_id>/publicacion/",
+        views_vendedor.cambiar_publicacion_vendedor,
+        name="cambiar_publicacion",
+    ),
 ]

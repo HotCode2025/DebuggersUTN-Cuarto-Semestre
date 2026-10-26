@@ -1,6 +1,8 @@
 from django import forms
+from django.forms import inlineformset_factory
+from .forms import ConjuntoVariantesProducto, ConjuntoImagenesProducto
 
-from .models import Categoria, Producto
+from .models import Categoria, Producto, Variante, ImagenProducto
 
 
 class FormularioProductoVendedor(forms.ModelForm):
@@ -41,3 +43,36 @@ class FormularioProductoVendedor(forms.ModelForm):
         self.fields["categoria"].queryset = Categoria.objects.filter(
             activa=True,
         ).order_by("nombre")
+
+# Permite administrar las variantes de un producto desde el panel.
+FormularioVariantesVendedor = inlineformset_factory(
+    parent_model=Producto,
+    model=Variante,
+    formset=ConjuntoVariantesProducto,
+    fields=(
+        "color",
+        "medidas",
+        "material",
+        "precio",
+        "stock",
+        "imagen",
+        "activa",
+    ),
+    extra=1,
+    can_delete=True,
+    can_delete_extra=True,
+)
+# Administra las fotografías generales de un producto.
+FormularioGaleriaVendedor = inlineformset_factory(
+    parent_model=Producto,
+    model=ImagenProducto,
+    formset=ConjuntoImagenesProducto,
+    fields=(
+        "imagen",
+        "texto_alternativo",
+        "orden",
+    ),
+    extra=1,
+    can_delete=True,
+    can_delete_extra=True,
+)

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería | MUNDORA</title>
+</head>
+<body>
+    <main>
+        <h1>Galería de {{ producto.nombre }}</h1>
+
+        <p>
+            Agregá fotografías generales del producto.
+            Estas imágenes son independientes de las fotos
+            asociadas a cada variante.
+        </p>
+
+        <p>
+            El número de orden más bajo identifica la imagen principal.
+            Usá números distintos, por ejemplo: 0, 1 y 2.
+        </p>
+
+        <p>
+            La descripción debe explicar brevemente qué muestra la foto.
+            Ejemplo: «Lámpara de pie roja vista de frente».
+        </p>
+
+        {% if producto.publicado %}
+            <p>
+                El producto está publicado y debe conservar
+                al menos una imagen en la galería.
+            </p>
+        {% endif %}
+
+        {% if producto.estado_revision == "aprobado" %}
+            <p>
+                Modificar la galería hará que el producto
+                vuelva a estar en revisión.
+            </p>
+        {% elif producto.estado_revision == "rechazado" %}
+            <p>
+                Guardar correcciones no reactiva la publicación.
+                El producto continuará rechazado.
+            </p>
+        {% endif %}
+
+        <!-- Envía las fotografías y sus datos con protección CSRF. -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Identifica los formularios incluidos en el envío. -->
+            {{ conjunto.management_form }}
+            {{ conjunto.management_form.errors }}
+            {{ conjunto.non_form_errors }}
+
+            {% for formulario in conjunto %}
+                <fieldset>
+                    <legend>
+                        {% if formulario.instance.pk %}
+                            Imagen {{ forloop.counter }}
+                        {% else %}
+                            Nueva imagen
+                        {% endif %}
+                    </legend>
+
+                    {{ formulario.non_field_errors }}
+
+                    <!-- Conserva los identificadores de cada fotografía. -->
+                    {% for campo in formulario.hidden_fields %}
+                        {{ campo }}
+                        {{ campo.errors }}
+                    {% endfor %}
+
+                    {% if formulario.instance.pk and formulario.instance.imagen %}
+                        <p>Imagen guardada:</p>
+                        <img
+                            src="{{ formulario.instance.imagen.url }}"
+                            alt="{{ formulario.instance.texto_alternativo }}"
+                            width="200"
+                        >
+                    {% endif %}
+
+                    {% for campo in formulario.visible_fields %}
+                        <p>
+                            {{ campo.label_tag }}
+                            {{ campo }}
+
+                            {% if campo.help_text %}
+                                <small>{{ campo.help_text }}</small>
+                            {% endif %}
+
+                            {{ campo.errors }}
+                        </p>
+                    {% endfor %}
+                </fieldset>
+            {% endfor %}
+
+            <p>
+                Dejá intacto el bloque «Nueva imagen» si no querés
+                agregar una fotografía. Si lo empezaste a completar
+                y querés descartarlo, marcá «Eliminar».
+            </p>
+
+            <button type="submit">Guardar galería</button>
+        </form>
+
+        <p>
+            <a href="{% url 'vendedores:detalle_producto' producto.pk %}">
+                Volver al producto
+            </a>
+        </p>
+    </main>
+</body>
+</html>
