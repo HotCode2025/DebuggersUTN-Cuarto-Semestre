@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ producto.nombre }} | Panel del vendedor</title>
+</head>
+<body>
+    <main>
+        <p>
+            <a href="{% url 'vendedores:panel' %}">
+                Volver al panel
+            </a>
+        </p>
+
+        <h1>{{ producto.nombre }}</h1>
+            <!-- Informa el resultado de la creación o edición. -->
+            {% if messages %}
+                <div role="status">
+                    {% for mensaje in messages %}
+                        <p>{{ mensaje }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+<!-- Abre la edición de los datos generales del producto. -->
+<p>
+    <a href="{% url 'vendedores:editar_producto' producto.pk %}">
+        Editar producto
+    </a>
+</p>
+        <!-- Muestra la información privada de la publicación. -->
+        <section>
+            <h2>Datos del producto</h2>
+
+            <p>Tienda: {{ producto.tienda.nombre }}</p>
+            <p>Categoría: {{ producto.categoria.nombre }}</p>
+            <p>Marca: {{ producto.marca|default:"Sin especificar" }}</p>
+
+            {{ producto.descripcion|linebreaks }}
+
+            <p>
+                Publicado:
+                {{ producto.publicado|yesno:"Sí,No" }}
+            </p>
+
+            <p>
+                Estado de revisión:
+                {{ producto.get_estado_revision_display }}
+            </p>
+
+            {% if producto.estado_revision == "pendiente" %}
+                <p>
+                    Esta publicación todavía no está verificada.
+                </p>
+            {% elif producto.estado_revision == "rechazado" %}
+                <p>
+                    Esta publicación fue rechazada.
+                    Debés corregirla y solicitar una nueva revisión.
+                </p>
+            {% endif %}
+
+            {% if producto.observaciones_revision %}
+                <h3>Observaciones del administrador</h3>
+                {{ producto.observaciones_revision|linebreaks }}
+            {% endif %}
+        </section>
+
+        <!-- Detalla las variantes, incluidos los registros inactivos. -->
+        <section>
+            <h2>Variantes</h2>
+
+            <ul>
+                {% for variante in producto.variantes.all %}
+                    <li>
+                        <p>
+                            Color: {{ variante.color|default:"Sin especificar" }}.
+                            Medidas: {{ variante.medidas|default:"Sin especificar" }}.
+                            Material: {{ variante.material|default:"Sin especificar" }}.
+                        </p>
+
+                        <p>
+                            Precio: ARS {{ variante.precio|floatformat:2 }}.
+                            Stock: {{ variante.stock }}.
+                            Activa: {{ variante.activa|yesno:"Sí,No" }}.
+                        </p>
+                    </li>
+                {% empty %}
+                    <li>Este producto todavía no tiene variantes.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Muestra las fotografías cargadas en la galería. -->
+        <section>
+            <h2>Galería</h2>
+
+            {% for foto in producto.imagenes.all %}
+                {% if foto.imagen %}
+                    <figure>
+                        <img
+                            src="{{ foto.imagen.url }}"
+                            alt="{{ foto.texto_alternativo }}"
+                            width="240"
+                        >
+                        <figcaption>
+                            {{ foto.texto_alternativo }}
+                        </figcaption>
+                    </figure>
+                {% endif %}
+            {% empty %}
+                <p>Este producto todavía no tiene imágenes.</p>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

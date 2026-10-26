@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del vendedor | MUNDORA</title>
+</head>
+<body>
+    <main>
+        <h1>Panel del vendedor</h1>
+
+        <p>
+            <a href="{% url 'accounts:mi_cuenta' %}">
+                Volver a mi cuenta
+            </a>
+        </p>
+
+        {% if tienda %}
+            <!-- Muestra los datos y el estado de la tienda propia. -->
+            <section>
+                <h2>{{ tienda.nombre }}</h2>
+
+                <p>{{ tienda.descripcion }}</p>
+                <p>Estado: {{ tienda.get_estado_display }}</p>
+
+                {% if tienda.estado == "pendiente" %}
+                    <p>
+                        Tu tienda está pendiente de aprobación.
+                        Todavía no podés publicar productos.
+                    </p>
+                {% elif tienda.estado == "rechazada" %}
+                    <p>
+                        Tu tienda fue rechazada.
+                        Revisá las observaciones del administrador.
+                    </p>
+                {% endif %}
+
+                {% if tienda.observaciones_revision %}
+                    <h3>Observaciones de la revisión</h3>
+                    {{ tienda.observaciones_revision|linebreaks }}
+                {% endif %}
+            </section>
+
+            <!-- Lista únicamente las publicaciones de esta tienda. -->
+            <section>
+                <h2>Mis productos</h2>
+                <!-- Permite crear un borrador para la tienda propia. -->
+                    <p>
+                        <a href="{% url 'vendedores:crear_producto' %}">
+                            Crear producto
+                        </a>
+                    </p>
+
+                <ul>
+                    {% for producto in productos %}
+                        <li>
+                            <a href="{% url 'vendedores:detalle_producto' producto.pk %}">
+                                {{ producto.nombre }}
+                            </a>
+
+                            <p>
+                                Categoría: {{ producto.categoria.nombre }}.
+                                Revisión: {{ producto.get_estado_revision_display }}.
+                            </p>
+
+                            <p>
+                                Publicado:
+                                {{ producto.publicado|yesno:"Sí,No" }}.
+                            </p>
+                        </li>
+                    {% empty %}
+                        <li>Tu tienda todavía no tiene productos cargados.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% else %}
+            <p>Todavía no tenés una tienda asociada a tu cuenta.</p>
+        {% endif %}
+    </main>
+</body>
+</html>

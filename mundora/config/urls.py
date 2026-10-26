@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("cuentas/", include("accounts.urls")),
+    path('vendedor/', include("catalog.urls_vendedor")),
 ]
 
 # Sirve los archivos cargados mientras trabajamos en modo desarrollo.

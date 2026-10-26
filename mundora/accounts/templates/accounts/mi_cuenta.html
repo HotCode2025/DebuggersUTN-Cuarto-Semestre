@@ -22,6 +22,12 @@
             <dt>Teléfono</dt>
             <dd>{{ request.user.telefono|default:"Sin completar" }}</dd>
         </dl>
+        <!-- Permite consultar la tienda asociada a esta cuenta. -->
+        <p>
+            <a href="{% url 'vendedores:panel' %}">
+                Ir al panel del vendedor
+            </a>
+        </p>
 
         <!-- Cierra la sesión con protección CSRF. -->
         <form method="post" action="{% url 'accounts:cerrar_sesion' %}">
