@@ -1,0 +1,177 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}{{ producto.nombre }} | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'catalogo:listado' %}">← Volver al catálogo</a>
+    </p>
+
+    <div class="detalle-producto">
+        <!-- Presenta el nombre y los datos principales del producto. -->
+        <header class="detalle-resumen">
+            <p class="detalle-categoria">{{ producto.categoria.nombre }}</p>
+
+            <h1>{{ producto.nombre }}</h1>
+
+            <p>
+                Vendido por
+                <a href="#informacion-tienda">{{ producto.tienda.nombre }}</a>
+            </p>
+
+            {% if producto.estado_revision == "aprobado" %}
+                <p class="etiqueta etiqueta-verificada">
+                    ✓ Publicación verificada por MUNDORA
+                </p>
+            {% else %}
+                <aside aria-label="Aviso de revisión">
+                    <p>
+                        <strong>Publicación no verificada.</strong>
+                        Esta publicación está en revisión.
+                        MUNDORA todavía no aprobó su contenido.
+                    </p>
+                </aside>
+            {% endif %}
+
+            <p class="detalle-precio">
+                Desde ARS {{ producto.precio_desde|floatformat:"2g" }}
+            </p>
+            <p class="detalle-aclaracion">
+                Precio en pesos argentinos. Consultá el precio y
+                la disponibilidad de cada variante.
+            </p>
+
+            {% if producto.hay_stock %}
+                <p class="detalle-disponibilidad">
+                    Hay variantes con stock disponible.
+                </p>
+            {% else %}
+                <p class="detalle-sin-stock">
+                    Producto sin stock por el momento.
+                </p>
+            {% endif %}
+
+            <a href="#variantes-producto" class="boton detalle-enlace">
+                Ver variantes
+            </a>
+        </header>
+
+        <!-- Conserva el orden de la galería y permite abrir cada foto. -->
+        <section class="detalle-galeria" aria-labelledby="titulo-galeria">
+            <h2 id="titulo-galeria">Imágenes del producto</h2>
+
+            <div class="detalle-fotos">
+                {% for foto in producto.fotos_catalogo %}
+                    <figure>
+                        <a href="{{ foto.imagen.url }}">
+                            <img
+                                src="{{ foto.imagen.url }}"
+                                alt="{{ foto.texto_alternativo }}"
+                                {% if not forloop.first %}loading="lazy"{% endif %}
+                            >
+                        </a>
+                        <figcaption>
+                            {{ foto.texto_alternativo }}
+                        </figcaption>
+                    </figure>
+                {% empty %}
+                    <p>No hay fotografías disponibles.</p>
+                {% endfor %}
+            </div>
+
+            <p class="detalle-aclaracion">
+                Tocá una imagen para verla en tamaño completo.
+            </p>
+        </section>
+
+        <!-- Describe las características generales y los cuidados. -->
+        <section class="detalle-bloque" aria-labelledby="titulo-descripcion">
+            <h2 id="titulo-descripcion">Acerca del producto</h2>
+
+            {{ producto.descripcion|linebreaks }}
+
+            <dl class="detalle-datos">
+                <dt>Categoría</dt>
+                <dd>{{ producto.categoria.nombre }}</dd>
+
+                <dt>Provincia de origen</dt>
+                <dd>{{ producto.provincia_origen }}</dd>
+
+                {% if producto.marca %}
+                    <dt>Marca</dt>
+                    <dd>{{ producto.marca }}</dd>
+                {% endif %}
+            </dl>
+
+            {% if producto.cuidados %}
+                <h3>Cuidados</h3>
+                {{ producto.cuidados|linebreaks }}
+            {% endif %}
+        </section>
+
+        <!-- Muestra únicamente las variantes activas recibidas de la vista. -->
+        <section
+            id="variantes-producto"
+            class="detalle-bloque"
+            aria-labelledby="titulo-variantes"
+        >
+            <h2 id="titulo-variantes">Variantes del producto</h2>
+            <p>Compará las características, el precio y las unidades disponibles.</p>
+
+            <div class="detalle-variantes">
+                {% for variante in producto.variantes_activas %}
+                    <article class="detalle-variante">
+                        {% if variante.imagen %}
+                            <img
+                                class="detalle-variante-imagen"
+                                src="{{ variante.imagen.url }}"
+                                alt="{{ producto.nombre }} — {{ variante.color|default:'variante estándar' }}"
+                                loading="lazy"
+                            >
+                        {% endif %}
+
+                        <h3>Opción {{ forloop.counter }}</h3>
+
+                        <dl class="detalle-datos">
+                            <dt>Color</dt>
+                            <dd>{{ variante.color|default:"Sin especificar" }}</dd>
+
+                            <dt>Medidas</dt>
+                            <dd>{{ variante.medidas|default:"Sin especificar" }}</dd>
+
+                            <dt>Material</dt>
+                            <dd>{{ variante.material|default:"Sin especificar" }}</dd>
+                        </dl>
+
+                        <p class="precio">
+                            ARS {{ variante.precio|floatformat:"2g" }}
+                        </p>
+
+                        {% if variante.stock > 0 %}
+                            <p class="detalle-disponibilidad">
+                                Stock disponible: {{ variante.stock }}
+                                unidad{{ variante.stock|pluralize:"es" }}.
+                            </p>
+                        {% else %}
+                            <p class="detalle-sin-stock">
+                                Sin stock en esta variante.
+                            </p>
+                        {% endif %}
+                    </article>
+                {% empty %}
+                    <p>No hay variantes activas disponibles.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Presenta la información comercial pública de la tienda. -->
+        <section
+            id="informacion-tienda"
+            class="detalle-bloque detalle-tienda"
+            aria-labelledby="titulo-tienda"
+        >
+            <h2 id="titulo-tienda">Conocé a {{ producto.tienda.nombre }}</h2>
+            {{ producto.tienda.descripcion|linebreaks }}
+        </section>
+    </div>
+{% endblock %}

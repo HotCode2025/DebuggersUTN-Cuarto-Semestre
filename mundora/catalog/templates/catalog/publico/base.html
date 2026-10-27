@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block titulo %}MUNDORA{% endblock %}</title>
+
+    <!-- Aplica el tema antes de mostrar la página. -->
+    <script src="{% static 'catalog/js/tema.js' %}"></script>
+
+    <!-- Carga las tipografías aprobadas para la interfaz. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Aplica los estilos compartidos de las páginas públicas. -->
+    <link
+        rel="stylesheet"
+        href="{% static 'catalog/css/estilos.css' %}"
+    >
+</head>
+<body>
+    <a href="#contenido" class="saltar-contenido">
+        Saltar al contenido
+    </a>
+
+    <header class="encabezado">
+        <div class="encabezado-interior">
+            <div>
+                <!-- Muestra el logo correspondiente al tema elegido. -->
+                <a
+                    href="{% url 'catalogo:listado' %}"
+                    class="marca"
+                    aria-label="MUNDORA: ir al catálogo"
+                >
+                    <img
+                        src="{% static 'catalog/img/logo-mundora-claro.png' %}"
+                        class="logo-mundora logo-mundora-claro"
+                        alt="MUNDORA"
+                    >
+                    <img
+                        src="{% static 'catalog/img/logo-mundora-oscuro.png' %}"
+                        class="logo-mundora logo-mundora-oscuro"
+                        alt="MUNDORA"
+                    >
+                </a>    
+
+                <p class="eslogan">
+                    Diseño argentino, para tu día a día.
+                </p>
+            </div>
+
+            <!-- Muestra los accesos según el estado de la sesión. -->
+            <nav class="navegacion" aria-label="Navegación principal">
+                <a href="{% url 'catalogo:listado' %}">Catálogo</a>
+
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'accounts:mi_cuenta' %}">
+                        Mi cuenta
+                    </a>
+                {% else %}
+                    <a href="{% url 'accounts:iniciar_sesion' %}">
+                        Iniciar sesión
+                    </a>
+
+                    <a href="{% url 'accounts:registro' %}" class="boton">
+                        Crear cuenta
+                    </a>
+                {% endif %}
+
+                <button
+                    type="button"
+                    id="boton-tema"
+                    class="boton-tema"
+                    hidden
+                >
+                    Modo oscuro
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido" class="contenido" tabindex="-1">
+        {% block contenido %}{% endblock %}
+    </main>
+
+    <footer class="pie">
+        <p>MUNDORA · Diseño para hogares y ambientes.</p>
+        <p>Productos de emprendedores y talleres argentinos.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,119 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Catálogo | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <h1>Diseño argentino con historia.</h1>
+
+    <p>
+        Descubrí objetos para tu hogar creados por
+        productores independientes de todo el país.
+    </p>
+<!-- Permite buscar y combinar filtros sin modificar datos. -->
+<section aria-label="Buscar y filtrar productos">
+    <form method="get" action="{% url 'catalogo:listado' %}">
+        {{ formulario.non_field_errors }}
+
+        {% for campo in formulario %}
+            <div>
+                {{ campo.label_tag }}
+                {{ campo }}
+
+                {% if campo.help_text %}
+                    <small>{{ campo.help_text }}</small>
+                {% endif %}
+
+                {{ campo.errors }}
+            </div>
+        {% endfor %}
+
+        <button type="submit">Aplicar filtros</button>
+
+        <a href="{% url 'catalogo:listado' %}">
+            Limpiar filtros
+        </a>
+    </form>
+</section>
+
+{% if not formulario.errors %}
+    <p>Productos encontrados: {{ pagina.paginator.count }}</p>
+    <p>
+        El precio «Desde» y la disponibilidad corresponden a
+        las variantes que coinciden con los filtros.
+        En el detalle podés consultar todas las opciones activas.
+    </p>
+{% endif %}
+    <!-- Presenta los productos habilitados para los compradores. -->
+    <section aria-label="Productos">
+        {% for producto in pagina %}
+            <article>
+                <a href="{% url 'catalogo:detalle' producto.identificador_url %}">
+                    {% with foto=producto.fotos_catalogo.0 %}
+                        {% if foto %}
+                            <img
+                                src="{{ foto.imagen.url }}"
+                                alt="{{ foto.texto_alternativo }}"
+                                width="240"
+                                loading="lazy"
+                            >
+                        {% endif %}
+                    {% endwith %}
+
+                    <h2>{{ producto.nombre }}</h2>
+                </a>
+
+                <p>{{ producto.tienda.nombre }}</p>
+                <p>{{ producto.categoria.nombre }}</p>
+
+                <p class="precio">
+                    Desde ARS {{ producto.precio_desde|floatformat:"2g" }}
+                </p>
+
+                {% if producto.estado_revision == "aprobado" %}
+                    <p class="etiqueta etiqueta-verificada">
+                        ✓ Publicación verificada
+                    </p>
+                {% else %}
+                    <p class="etiqueta etiqueta-pendiente">
+                        En revisión · Publicación no verificada
+                    </p>
+                {% endif %}
+
+                {% if producto.hay_stock %}
+                    <p>Stock disponible en las opciones que coinciden.</p>
+                {% else %}
+                    <p>Sin stock en las opciones que coinciden.</p>
+                {% endif %}
+            </article>
+        {% empty %}
+            {% if formulario.errors %}
+                <p>Corregí los filtros para consultar el catálogo.</p>
+            {% else %}
+                <p>No encontramos productos con esos criterios.</p>
+            {% endif %}
+        {% endfor %}
+    </section>
+
+    <!-- Permite recorrer las páginas del catálogo. -->
+    <!-- Conserva la búsqueda y los filtros al cambiar de página. -->
+    {% if pagina.has_other_pages %}
+        <nav aria-label="Páginas del catálogo">
+            {% if pagina.has_previous %}
+                <a href="?{% if parametros %}{{ parametros }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}">
+                    Anterior
+                </a>
+            {% endif %}
+
+            <span>
+                Página {{ pagina.number }}
+                de {{ pagina.paginator.num_pages }}
+            </span>
+
+            {% if pagina.has_next %}
+                <a href="?{% if parametros %}{{ parametros }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">
+                    Siguiente
+                </a>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}
