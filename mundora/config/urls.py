@@ -8,6 +8,7 @@ urlpatterns = [
     path("cuentas/", include("accounts.urls")),
     path('vendedor/', include("catalog.urls_vendedor")),
     path("catalogo/", include ("catalog.urls_publicas")),
+    path("carrito/", include("carrito.urls")),
 ]
 
 # Sirve los archivos cargados mientras trabajamos en modo desarrollo.

@@ -63,6 +63,9 @@
                     <a href="{% url 'accounts:mi_cuenta' %}">
                         Mi cuenta
                     </a>
+                    <a href="{% url 'carrito:detalle' %}">
+                        Mi carrito
+                    </a>
                 {% else %}
                     <a href="{% url 'accounts:iniciar_sesion' %}">
                         Iniciar sesión
@@ -86,6 +89,24 @@
     </header>
 
     <main id="contenido" class="contenido" tabindex="-1">
+    <!-- Muestra confirmaciones y errores de las operaciones. -->
+    {% if messages %}
+        <div class="mensajes" aria-label="Mensajes de la operación">
+            {% for mensaje in messages %}
+                <p
+                    class="mensaje {{ mensaje.tags }}"
+                    {% if mensaje.level >= 40 %}
+                        role="alert"
+                    {% else %}
+                        role="status"
+                    {% endif %}
+                >
+                    {{ mensaje }}
+                </p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% block contenido %}{% endblock %}
     </main>
 

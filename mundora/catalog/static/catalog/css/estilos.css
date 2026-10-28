@@ -583,3 +583,183 @@ aside[aria-label="Aviso de revisión"] {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+/* Separa los mensajes del contenido de la página. */
+.mensajes {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.mensaje {
+    margin: 0;
+    padding: 14px 18px;
+    border: 1px solid var(--borde);
+    border-left: 5px solid var(--enlace);
+    border-radius: 10px;
+    background: var(--superficie);
+    color: var(--texto);
+}
+
+.mensaje.error {
+    border-left-color: var(--error);
+}
+
+.mensaje.warning {
+    border-left-color: var(--naranja);
+}
+
+/* Organiza la cantidad y el botón dentro de cada variante. */
+.formulario-agregar-carrito {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.formulario-agregar-carrito input {
+    max-width: 140px;
+}
+
+.formulario-agregar-carrito button {
+    width: 100%;
+}
+/* Organiza el carrito en una columna en pantallas pequeñas. */
+.carrito-distribucion {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    margin-top: 28px;
+    align-items: start;
+}
+
+.carrito-lista {
+    display: grid;
+    gap: 24px;
+    min-width: 0;
+}
+
+/* Presenta cada selección sin desbordar la pantalla. */
+.carrito-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--fondo);
+    min-width: 0;
+}
+
+.carrito-informacion {
+    min-width: 0;
+}
+
+.carrito-informacion h2 {
+    margin-top: 0;
+}
+
+.carrito-imagen {
+    display: block;
+    width: 100%;
+    max-width: 180px;
+    aspect-ratio: 1;
+    object-fit: contain;
+    padding: 12px;
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+/* Agrupa el campo de cantidad y su acción. */
+.carrito-formulario {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.carrito-formulario > div {
+    width: 100px;
+}
+
+.carrito-formulario button,
+.carrito-quitar button {
+    max-width: 100%;
+}
+
+.carrito-quitar {
+    margin-top: 14px;
+}
+
+.boton-secundario {
+    background: var(--superficie);
+    color: var(--texto);
+    border-color: var(--borde);
+}
+
+.boton-secundario:hover {
+    background: var(--fondo);
+    border-color: var(--enlace);
+}
+
+/* Distingue los problemas de disponibilidad sin ocultar el producto. */
+.carrito-aviso {
+    padding: 12px 16px;
+    border-left: 4px solid var(--naranja);
+    border-radius: 8px;
+    background: var(--superficie);
+    color: var(--texto);
+}
+
+.carrito-aviso p {
+    margin: 4px 0;
+}
+
+/* Presenta el importe y el estado vacío. */
+.carrito-resumen,
+.carrito-vacio {
+    padding: 24px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    min-width: 0;
+}
+
+.carrito-resumen h2,
+.carrito-vacio h2 {
+    margin-top: 0;
+}
+
+.carrito-total {
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.carrito-vacio {
+    margin-top: 28px;
+}
+
+@media (min-width: 640px) {
+    /* Mantiene alineada la información de los ítems con o sin imagen. */
+    .carrito-item {
+        grid-template-columns: 140px minmax(0, 1fr);
+    }
+
+    .carrito-imagen {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .carrito-informacion {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+@media (min-width: 1024px) {
+    /* Ubica el resumen junto a la lista de productos. */
+    .carrito-distribucion {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+}

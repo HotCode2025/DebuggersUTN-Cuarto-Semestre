@@ -146,17 +146,55 @@
                         <p class="precio">
                             ARS {{ variante.precio|floatformat:"2g" }}
                         </p>
-
                         {% if variante.stock > 0 %}
                             <p class="detalle-disponibilidad">
                                 Stock disponible: {{ variante.stock }}
                                 unidad{{ variante.stock|pluralize:"es" }}.
                             </p>
+
+                            {% if request.user.is_authenticated %}
+                                <!-- Envía la variante y la cantidad al carrito del usuario. -->
+                                <form
+                                    method="post"
+                                    action="{% url 'carrito:agregar' variante.pk %}"
+                                    class="formulario-agregar-carrito"
+                                >
+                                    {% csrf_token %}
+
+                                    <div>
+                                        <label for="cantidad-{{ variante.pk }}">
+                                            Cantidad a agregar
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="cantidad-{{ variante.pk }}"
+                                            name="cantidad"
+                                            value="1"
+                                            min="1"
+                                            max="{{ variante.stock }}"
+                                            step="1"
+                                            required
+                                        >
+                                    </div>
+
+                                    <button type="submit">
+                                        Agregar al carrito
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a
+                                    href="{% url 'accounts:iniciar_sesion' %}?next={{ request.path|urlencode }}"
+                                    class="boton detalle-enlace"
+                                >
+                                    Iniciá sesión para agregar
+                                </a>
+                            {% endif %}
                         {% else %}
                             <p class="detalle-sin-stock">
                                 Sin stock en esta variante.
                             </p>
                         {% endif %}
+                       
                     </article>
                 {% empty %}
                     <p>No hay variantes activas disponibles.</p>

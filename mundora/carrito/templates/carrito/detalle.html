@@ -1,0 +1,186 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Mi carrito | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <h1>Mi carrito</h1>
+
+    <p>
+        Tu selección queda guardada en tu cuenta.
+        Agregar productos no reserva stock.
+    </p>
+
+    {% if filas %}
+        <div class="carrito-distribucion">
+            <!-- Presenta los productos guardados y sus controles. -->
+            <section class="carrito-lista" aria-label="Productos del carrito">
+                {% for fila in filas %}
+                    <article class="carrito-item">
+                        {% if fila.imagen_url %}
+                            <img
+                                class="carrito-imagen"
+                                src="{{ fila.imagen_url }}"
+                                alt="{{ fila.texto_imagen }}"
+                                loading="lazy"
+                            >
+                        {% endif %}
+
+                        <div class="carrito-informacion">
+                            <h2>
+                                {% if fila.producto_visible %}
+                                    <a href="{% url 'catalogo:detalle' fila.producto.identificador_url %}">
+                                        {{ fila.producto.nombre }}
+                                    </a>
+                                {% else %}
+                                    {{ fila.producto.nombre }}
+                                {% endif %}
+                            </h2>
+
+                            <p>
+                                Vendido por {{ fila.producto.tienda.nombre }}
+                            </p>
+
+                            {% if fila.producto_visible %}
+                                {% if fila.producto.estado_revision == "aprobado" %}
+                                    <p class="etiqueta etiqueta-verificada">
+                                        Publicación verificada
+                                    </p>
+                                {% else %}
+                                    <p class="etiqueta etiqueta-pendiente">
+                                        En revisión · No verificada
+                                    </p>
+                                {% endif %}
+                            {% endif %}
+
+                            <dl class="detalle-datos">
+                                <dt>Color</dt>
+                                <dd>{{ fila.variante.color|default:"Sin especificar" }}</dd>
+
+                                <dt>Medidas</dt>
+                                <dd>{{ fila.variante.medidas|default:"Sin especificar" }}</dd>
+
+                                <dt>Material</dt>
+                                <dd>{{ fila.variante.material|default:"Sin especificar" }}</dd>
+                            </dl>
+
+                            <p>
+                                Precio unitario:
+                                ARS {{ fila.variante.precio|floatformat:"2g" }}
+                            </p>
+
+                            <p>Cantidad guardada: {{ fila.item.cantidad }}</p>
+
+                            <p class="precio">
+                                Subtotal:
+                                ARS {{ fila.subtotal|floatformat:"2g" }}
+                            </p>
+
+                            {% if fila.motivo %}
+                                <div class="carrito-aviso">
+                                    <p>{{ fila.motivo }}</p>
+                                    <p>
+                                        Este ítem no está incluido en el total
+                                        de productos disponibles.
+                                    </p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Actualiza la cantidad sin sumar a la anterior. -->
+                            {% if fila.puede_actualizar %}
+                                <form
+                                    method="post"
+                                    action="{% url 'carrito:actualizar' fila.item.pk %}"
+                                    class="carrito-formulario"
+                                >
+                                    {% csrf_token %}
+
+                                    <div>
+                                        <label for="cantidad-item-{{ fila.item.pk }}">
+                                            Cantidad
+                                        </label>
+
+                                        <input
+                                            id="cantidad-item-{{ fila.item.pk }}"
+                                            type="number"
+                                            name="cantidad"
+                                            value="{{ fila.item.cantidad }}"
+                                            min="1"
+                                            max="{{ fila.variante.stock }}"
+                                            step="1"
+                                            required
+                                        >
+                                    </div>
+
+                                    <button type="submit">
+                                        Actualizar cantidad
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            <!-- Permite quitar también los productos no disponibles. -->
+                            <form
+                                method="post"
+                                action="{% url 'carrito:quitar' fila.item.pk %}"
+                                class="carrito-quitar"
+                            >
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="boton-secundario"
+                                    aria-label="Quitar {{ fila.producto.nombre }} del carrito"
+                                >
+                                    Quitar del carrito
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+
+            <!-- Resume únicamente los ítems con disponibilidad suficiente. -->
+            <aside class="carrito-resumen" aria-labelledby="titulo-resumen">
+                <h2 id="titulo-resumen">Resumen</h2>
+
+                <p>Total de productos disponibles</p>
+
+                <p class="carrito-total">
+                    ARS {{ total_disponible|floatformat:"2g" }}
+                </p>
+
+                <p class="detalle-aclaracion">
+                    Precios actuales en pesos argentinos.
+                    No incluye costos de envío.
+                </p>
+
+                {% if hay_problemas %}
+                    <p class="carrito-aviso">
+                        Hay productos que requieren atención.
+                        Revisá los avisos de tu selección.
+                    </p>
+                {% endif %}
+
+                <a
+                    href="{% url 'catalogo:listado' %}"
+                    class="boton detalle-enlace"
+                >
+                    Seguir explorando
+                </a>
+            </aside>
+        </div>
+    {% else %}
+        <!-- Se muestra también si el usuario todavía no tiene un carrito. -->
+        <section class="carrito-vacio">
+            <h2>Tu carrito está vacío</h2>
+
+            <p>
+                Explorá los productos de MUNDORA y guardá
+                los que quieras llevar a casa.
+            </p>
+
+            <a href="{% url 'catalogo:listado' %}" class="boton detalle-enlace">
+                Explorar el catálogo
+            </a>
+        </section>
+    {% endif %}
+{% endblock %}
