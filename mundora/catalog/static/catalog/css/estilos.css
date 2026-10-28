@@ -763,3 +763,78 @@ aside[aria-label="Aviso de revisión"] {
         grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     }
 }
+
+/* Ordena los campos del domicilio y limita el ancho de lectura. */
+.formulario-domicilio {
+    display: grid;
+    gap: 20px;
+    max-width: 680px;
+    margin-top: 28px;
+}
+
+.formulario-domicilio > div {
+    min-width: 0;
+}
+
+.formulario-domicilio .detalle-aclaracion {
+    margin: 6px 0 0;
+}
+
+.formulario-domicilio button {
+    justify-self: start;
+}
+/* Organiza la revisión del domicilio y los productos. */
+.compra-revision {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    margin-top: 28px;
+    align-items: start;
+}
+
+.compra-bloque {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+}
+
+.compra-bloque h2 {
+    margin-top: 0;
+}
+
+/* Separa los productos incluidos en la selección. */
+.compra-productos {
+    display: grid;
+    gap: 20px;
+}
+
+.compra-producto {
+    min-width: 0;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--borde);
+}
+
+.compra-producto h3 {
+    margin-top: 0;
+}
+
+.compra-importe {
+    margin-top: 24px;
+}
+
+.compra-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+/* Presenta el domicilio junto a los productos en escritorio. */
+@media (min-width: 1024px) {
+    .compra-revision {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    }
+}

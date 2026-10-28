@@ -25,4 +25,11 @@ urlpatterns = [
         LogoutView.as_view(),
         name="cerrar_sesion",
         ),
+    
+    # Permite completar y modificar el domicilio habitual de entrega.
+    path(
+        "mi-domicilio/",
+        views.mi_domicilio,
+        name="mi_domicilio",
+    ),
 ]

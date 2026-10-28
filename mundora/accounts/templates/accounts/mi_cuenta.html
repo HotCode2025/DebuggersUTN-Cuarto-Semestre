@@ -28,7 +28,12 @@
                 Ir al panel del vendedor
             </a>
         </p>
-
+            <!-- Permite consultar y editar el domicilio habitual. -->
+                <p>
+                    <a href="{% url 'accounts:mi_domicilio' %}">
+                        Mi domicilio de entrega
+                    </a>
+                </p>
         <!-- Cierra la sesión con protección CSRF. -->
         <form method="post" action="{% url 'accounts:cerrar_sesion' %}">
             {% csrf_token %}

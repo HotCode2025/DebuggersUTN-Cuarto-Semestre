@@ -1,0 +1,163 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Revisar compra | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'carrito:detalle' %}">
+            ← Volver al carrito
+        </a>
+    </p>
+
+    <h1>Revisá tu compra</h1>
+
+    {% if errores %}
+        <!-- Detiene el proceso si falta información o disponibilidad. -->
+        <section class="compra-bloque" aria-labelledby="titulo-problemas">
+            <h2 id="titulo-problemas">Necesitamos revisar algunos datos</h2>
+
+            <ul class="errorlist">
+                {% for error in errores %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+
+            <div class="compra-acciones">
+                {% if not domicilio %}
+                    <a
+                        href="{% url 'accounts:mi_domicilio' %}"
+                        class="boton detalle-enlace"
+                    >
+                        Completar domicilio
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'carrito:detalle' %}" class="detalle-enlace">
+                    Revisar el carrito
+                </a>
+            </div>
+        </section>
+    {% else %}
+        <div class="compra-revision">
+            <!-- Muestra el domicilio habitual que se propone para la entrega. -->
+            <section
+                class="compra-bloque"
+                aria-labelledby="titulo-entrega"
+            >
+                <h2 id="titulo-entrega">Domicilio de entrega</h2>
+
+                <dl class="detalle-datos">
+                    <dt>Recibe</dt>
+                    <dd>{{ domicilio.destinatario }}</dd>
+
+                    <dt>Teléfono de contacto</dt>
+                    <dd>{{ domicilio.telefono_contacto }}</dd>
+
+                    <dt>Dirección</dt>
+                    <dd>{{ domicilio.calle }} {{ domicilio.numero }}</dd>
+
+                    {% if domicilio.detalle_direccion %}
+                        <dt>Piso, departamento o referencias</dt>
+                        <dd>{{ domicilio.detalle_direccion }}</dd>
+                    {% endif %}
+
+                    <dt>Localidad y provincia</dt>
+                    <dd>
+                        {{ domicilio.localidad }},
+                        {{ domicilio.provincia }}
+                    </dd>
+
+                    <dt>Código postal</dt>
+                    <dd>{{ domicilio.codigo_postal }}</dd>
+                </dl>
+
+                <a href="{% url 'accounts:mi_domicilio' %}">
+                    Modificar mi domicilio
+                </a>
+            </section>
+
+            <!-- Resume los importes actuales de los productos seleccionados. -->
+            <section
+                class="compra-bloque"
+                aria-labelledby="titulo-productos"
+            >
+                <h2 id="titulo-productos">Productos de tu compra</h2>
+
+                <div class="compra-productos">
+                    {% for item in items %}
+                        <article class="compra-producto">
+                            <h3>{{ item.variante.producto.nombre }}</h3>
+
+                            <p>
+                                Tienda:
+                                {{ item.variante.producto.tienda.nombre }}
+                            </p>
+
+                            {% if item.variante.producto.estado_revision != "aprobado" %}
+                                <p class="etiqueta etiqueta-pendiente">
+                                    En revisión · Publicación no verificada
+                                </p>
+                            {% endif %}
+
+                            <dl class="detalle-datos">
+                                <dt>Color</dt>
+                                <dd>{{ item.variante.color|default:"Sin especificar" }}</dd>
+
+                                <dt>Medidas</dt>
+                                <dd>{{ item.variante.medidas|default:"Sin especificar" }}</dd>
+
+                                <dt>Material</dt>
+                                <dd>{{ item.variante.material|default:"Sin especificar" }}</dd>
+                            </dl>
+
+                            <p>Cantidad: {{ item.cantidad }}</p>
+
+                            <p>
+                                Precio unitario:
+                                ARS {{ item.variante.precio|floatformat:"2g" }}
+                            </p>
+
+                            <p class="precio">
+                                Subtotal:
+                                ARS {{ item.subtotal|floatformat:"2g" }}
+                            </p>
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <div class="compra-importe">
+                    <p>Total de productos</p>
+
+                    <p class="carrito-total">
+                        ARS {{ total_productos|floatformat:"2g" }}
+                    </p>
+
+                    <p class="detalle-aclaracion">
+                        Importe en pesos argentinos.
+                        No incluye costos de envío.
+                    </p>
+                </div>
+
+                <p>
+                    Los productos no quedan reservados.
+                    Verificaremos nuevamente la disponibilidad al
+                    confirmar el pago.
+                </p>
+                <!-- Registra la selección revisada sin efectuar un cobro. -->
+                <form method="post" action="{% url 'pedidos:crear' %}">
+                    {% csrf_token %}
+
+                    <input
+                        type="hidden"
+                        name="token_revision"
+                        value="{{ token_revision }}"
+                    >
+
+                    <button type="submit">
+                        Crear compra pendiente
+                    </button>
+                </form>
+            </section>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "catalog.apps.CatalogConfig",
     "carrito.apps.CarritoConfig",
+    "pedidos.apps.PedidosConfig",
 ]
 
 MIDDLEWARE = [

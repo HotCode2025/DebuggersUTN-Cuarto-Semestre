@@ -1,0 +1,107 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Detalle de compra | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'carrito:detalle' %}">← Volver al carrito</a>
+    </p>
+
+    <h1>Detalle de tu compra</h1>
+
+    <p>Código: {{ compra.codigo }}</p>
+    <p><strong>Estado: {{ compra.get_estado_display }}</strong></p>
+    <p>Creada el {{ compra.fecha_creacion|date:"d/m/Y H:i" }}</p>
+
+    {% if compra.estado == "pendiente" %}
+        <p class="carrito-aviso">
+            Esta compra está pendiente de pago.
+            No se realizó ningún cargo ni se reservaron unidades.
+        </p>
+    {% endif %}
+
+    {% if compra.motivo_rechazo %}
+        <p class="carrito-aviso">{{ compra.motivo_rechazo }}</p>
+    {% endif %}
+
+    <div class="compra-revision">
+        <!-- Muestra la copia de la dirección guardada en esta compra. -->
+        <section class="compra-bloque">
+            <h2>Datos de entrega</h2>
+
+            <p><strong>{{ compra.destinatario }}</strong></p>
+            <p>{{ compra.telefono_contacto }}</p>
+            <p>{{ compra.calle }} {{ compra.numero }}</p>
+
+            {% if compra.detalle_direccion %}
+                <p>{{ compra.detalle_direccion }}</p>
+            {% endif %}
+
+            <p>{{ compra.localidad }}, {{ compra.provincia }}</p>
+            <p>Código postal: {{ compra.codigo_postal }}</p>
+        </section>
+
+        <!-- Agrupa las copias de los productos según su tienda. -->
+        <section class="compra-bloque">
+            <h2>Pedidos de esta compra</h2>
+
+            {% for pedido in compra.pedidos.all %}
+                <section class="compra-producto">
+                    <h3>{{ pedido.nombre_tienda }}</h3>
+
+                    <p>
+                        Pedido {{ pedido.pk }} ·
+                        {{ pedido.get_estado_display }}
+                    </p>
+
+                    {% for detalle in pedido.detalles.all %}
+                        <article>
+                            <h4>{{ detalle.nombre_producto }}</h4>
+
+                            {% if detalle.marca %}
+                                <p>Marca: {{ detalle.marca }}</p>
+                            {% endif %}
+
+                            <p>
+                                Color: {{ detalle.color|default:"Sin especificar" }}
+                            </p>
+                            <p>
+                                Medidas: {{ detalle.medidas|default:"Sin especificar" }}
+                            </p>
+                            <p>
+                                Material: {{ detalle.material|default:"Sin especificar" }}
+                            </p>
+
+                            <p>Cantidad: {{ detalle.cantidad }}</p>
+
+                            <p>
+                                Precio unitario:
+                                ARS {{ detalle.precio_unitario|floatformat:"2g" }}
+                            </p>
+
+                            <p class="precio">
+                                Subtotal:
+                                ARS {{ detalle.subtotal|floatformat:"2g" }}
+                            </p>
+                        </article>
+                    {% endfor %}
+
+                    <p class="precio">
+                        Subtotal de la tienda:
+                        ARS {{ pedido.subtotal|floatformat:"2g" }}
+                    </p>
+                </section>
+            {% endfor %}
+
+            <p>Total de productos</p>
+
+            <p class="carrito-total">
+                ARS {{ compra.total_productos|floatformat:"2g" }}
+            </p>
+
+            <p class="detalle-aclaracion">
+                Importe en pesos argentinos. No incluye costos de envío.
+            </p>
+        </section>
+    </div>
+{% endblock %}

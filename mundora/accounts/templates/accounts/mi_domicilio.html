@@ -1,0 +1,47 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Mi domicilio | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'accounts:mi_cuenta' %}">
+            ← Volver a mi cuenta
+        </a>
+    </p>
+
+    <h1>Mi domicilio de entrega</h1>
+
+    <p>
+        Guardá la dirección que querés usar habitualmente para tus entregas.
+        Podés modificarla cuando lo necesites.
+    </p>
+
+    <!-- Muestra los datos editables y los errores de validación. -->
+    <form method="post" class="formulario-domicilio">
+        {% csrf_token %}
+
+        {{ formulario.non_field_errors }}
+
+        {% for campo in formulario %}
+            <div>
+                {{ campo.label_tag }}
+                {{ campo }}
+
+                {% if campo.help_text %}
+                    <p
+                        id="{{ campo.auto_id }}_helptext"
+                        class="detalle-aclaracion"
+                    >
+                        {{ campo.help_text }}
+                    </p>
+                {% endif %}
+
+                {{ campo.errors }}
+            </div>
+        {% endfor %}
+
+        <button type="submit">
+            Guardar domicilio
+        </button>
+    </form>
+{% endblock %}

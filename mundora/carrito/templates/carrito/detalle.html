@@ -160,6 +160,16 @@
                     </p>
                 {% endif %}
 
+                <!-- Permite revisar la compra cuando la selección tiene disponibilidad. -->
+                {% if not hay_problemas %}
+                    <a
+                        href="{% url 'pedidos:revisar' %}"
+                        class="boton detalle-enlace"
+                    >
+                        Revisar compra
+                    </a>
+                {% endif %}
+
                 <a
                     href="{% url 'catalogo:listado' %}"
                     class="boton detalle-enlace"
