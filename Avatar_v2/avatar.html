@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar - La leyenda de Aang</title>
+    <link rel="stylesheet" href="css/avatar.css">
+    <!-- Librería para la explosión de confeti/papelitos -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <!-- Modal Reglas del Juego -->
+    <div id="modal-reglas" class="modal">
+        <div class="modal-contenido">
+            <span id="cerrar-reglas" class="cerrar">&times;</span>
+            <div class="modal-header">
+                <h2>📜 Reglas del Juego</h2>
+            </div>
+            <div class="modal-body">
+                <div class="regla-card">
+                    <span class="regla-icon">🗺️</span>
+                    <div>
+                        <h4>Exploración</h4>
+                        <p>Desplázate con las flechas o botones. Despeja la niebla para encontrar a tus rivales.</p>
+                    </div>
+                </div>
+                <div class="regla-card">
+                    <span class="regla-icon">⚔️</span>
+                    <div>
+                        <h4>Combate</h4>
+                        <p>Al encontrarte con un personaje, la ventana de combate se activará congelando tu posición.</p>
+                    </div>
+                </div>
+                <div class="regla-card">
+                    <span class="regla-icon">🔮</span>
+                    <div>
+                        <h4>Reglas de Combate</h4>
+                        <div class="elementos-grid">
+                            <span>💧 <strong>Agua</strong> ➔ 🔥 <strong>Fuego</strong></span>
+                            <span>🔥 <strong>Fuego</strong> ➔ 🌱 <strong>Tierra</strong></span>
+                            <span>🌱 <strong>Tierra</strong> ➔ 💨 <strong>Aire</strong></span>
+                            <span>💨 <strong>Aire</strong> ➔ 💧 <strong>Agua</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Generar Personajes -->
+    <div id="modal-generar" class="modal">
+        <div class="modal-contenido modal-pequeno">
+            <span id="cerrar-generar" class="cerrar">&times;</span>
+            <h2>🎲 Generar Personajes</h2>
+            <p>¿Cuántos personajes aleatorios deseas agregar?</p>
+            <input type="number" id="input-cantidad" value="3" min="1" max="10">
+            <br><br>
+            <button id="boton-confirmar-generar">Generar</button>
+        </div>
+    </div>
+
+    <!-- Selección de Personaje -->
+    <section id="seleccionar-mascota">
+        <h1 class="titulo">Elige a tu Personaje</h1>
+        <div id="contenedorTarjetas" class="tarjetas"></div>
+        <div class="contenedor-boton-seleccionar">
+            <button id="boton-mascota">Seleccionar</button>
+            <button id="boton-generar-personajes" class="boton-secundario">Generar Personajes 🎲</button>
+            <button id="boton-reglas-inicio" class="boton-secundario">Reglas 📜</button>
+        </div>
+    </section>
+
+    <!-- Pantalla Principal del Juego -->
+    <section id="ver-mapa">
+        <div class="header-juego">
+            <h1 class="titulo-principal">Explora el Mapa y Derrota a tus Enemigos</h1>
+            <button id="boton-reglas-mapa" class="boton-secundario">Reglas 📜</button>
+        </div>
+        
+        <div id="pantalla-juego">
+            <!-- Izquierda: Mapa y Movimiento -->
+            <div id="zona-mapa">
+                <canvas id="mapa"></canvas>
+                <div id="botones-movimiento">
+                    <button onmouseup="detenerMovimiento()" onmousedown="moverArriba()">Arriba</button>
+                    <div class="linea-botones">
+                        <button onmouseup="detenerMovimiento()" onmousedown="moverIzquierda()">Izquierda</button>
+                        <button onmouseup="detenerMovimiento()" onmousedown="moverAbajo()">Abajo</button>
+                        <button onmouseup="detenerMovimiento()" onmousedown="moverDerecha()">Derecha</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Derecha: Ventana de Combate -->
+            <div id="panel-combate">
+                <h2>Ventana de Combate</h2>
+                <p id="estado-combate">Camina por el mapa para encontrar un enemigo...</p>
+                
+                <div class="detalles-combate">
+                    <div class="jugador-box">
+                        <h3>Jugador</h3>
+                        <p id="mascota-jugador">-</p>
+                        <p>Vidas: <span id="vidas-jugador">3</span></p>
+                    </div>
+                    <div class="enemigo-box">
+                        <h3>Enemigo</h3>
+                        <p id="mascota-enemigo">-</p>
+                        <p>Vidas: <span id="vidas-enemigo">3</span></p>
+                    </div>
+                </div>
+
+                <div id="contenedorAtaques" class="tarjetas-ataques"></div>
+
+                <div id="mensajes">
+                    <p id="resultado">¡Elige tu movimiento cuando inicie el combate!</p>
+                </div>
+
+                <section id="reiniciar">
+                    <button id="boton-reiniciar">Reiniciar Juego</button>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/avatar.js"></script>
+</body>
+</html>
