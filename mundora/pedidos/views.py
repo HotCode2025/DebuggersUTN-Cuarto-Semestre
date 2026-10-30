@@ -9,6 +9,8 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
+from django.http import Http404
+from django.core.paginator import Paginator
 
 from accounts.models import DomicilioEntrega
 from carrito.models import ItemCarrito
@@ -16,7 +18,7 @@ from carrito.views import motivo_no_disponible
 from catalog.views_publicas import productos_visibles
 
 from .models import Compra
-from .services import crear_compra_pendiente, huella_revision
+from .services import crear_compra_pendiente, huella_revision, procesar_pago_simulado
 
 
 @login_required
@@ -184,4 +186,64 @@ def detalle_compra(request, codigo):
         request,
         "pedidos/detalle_compra.html",
         {"compra": compra},
+    )
+@require_POST
+def pagar_compra(request, codigo):
+    """Procesa una simulación de pago para una compra propia."""
+
+    if not request.user.is_authenticated:
+        return redirect_to_login(
+            reverse("pedidos:detalle", kwargs={"codigo": codigo}),
+            login_url=reverse("accounts:iniciar_sesion"),
+        )
+
+    try:
+        compra, procesada = procesar_pago_simulado(
+            request.user,
+            codigo,
+            request.POST.get("resultado", ""),
+        )
+    except Compra.DoesNotExist:
+        raise Http404("No se encontró la compra.")
+    except ValidationError as error:
+        for mensaje in error.messages:
+            messages.error(request, mensaje)
+
+        return redirect("pedidos:detalle", codigo=codigo)
+
+    if not procesada:
+        messages.info(
+            request,
+            "Esta compra ya no está pendiente. "
+            "No se realizó ninguna operación adicional.",
+        )
+    elif compra.estado == Compra.Estado.CONFIRMADA:
+        messages.success(
+            request,
+            "Pago simulado aprobado. Tu compra está confirmada "
+            "y sus pedidos están en preparación.",
+        )
+    else:
+        messages.error(request, compra.motivo_rechazo)
+
+    return redirect("pedidos:detalle", codigo=compra.codigo)
+
+@login_required
+@require_GET
+def mis_compras(request):
+    """Lista únicamente las compras del usuario autenticado."""
+
+    compras = (
+        Compra.objects.filter(comprador=request.user)
+        .prefetch_related("pedidos__detalles")
+        .order_by("-fecha_creacion", "-pk")
+    )
+
+    paginador = Paginator(compras, 10)
+    pagina = paginador.get_page(request.GET.get("pagina"))
+
+    return render(
+        request,
+        "pedidos/mis_compras.html",
+        {"pagina": pagina},
     )

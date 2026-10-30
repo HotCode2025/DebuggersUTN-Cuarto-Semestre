@@ -27,4 +27,18 @@ urlpatterns = [
         views.detalle_compra,
         name="detalle",
     ),
+
+        # Procesa el pago simulado mediante una solicitud POST.
+    path(
+        "<uuid:codigo>/pagar/",
+        views.pagar_compra,
+        name="pagar",
+    ),
+
+        # Muestra el historial del comprador autenticado.
+    path(
+        "mis-compras/",
+        views.mis_compras,
+        name="mis_compras",
+    ),
 ]

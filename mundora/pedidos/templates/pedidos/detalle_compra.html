@@ -6,7 +6,11 @@
     <p>
         <a href="{% url 'carrito:detalle' %}">← Volver al carrito</a>
     </p>
-
+    <p>
+        <a href="{% url 'pedidos:mis_compras' %}">
+            Ver mis compras
+        </a>
+    </p>   
     <h1>Detalle de tu compra</h1>
 
     <p>Código: {{ compra.codigo }}</p>
@@ -104,4 +108,60 @@
             </p>
         </section>
     </div>
+        <!-- Permite probar el pago sin utilizar dinero ni tarjetas reales. -->
+    {% if compra.estado == "pendiente" %}
+        <section class="compra-bloque">
+            <h2>Pago simulado</h2>
+
+            <p>
+                Entorno de pruebas: no se realizan cobros reales.
+                Al aprobar, verificaremos nuevamente la disponibilidad
+                de todos los artículos.
+            </p>
+
+            <form
+                method="post"
+                action="{% url 'pedidos:pagar' compra.codigo %}"
+                class="compra-acciones"
+            >
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    name="resultado"
+                    value="aprobado"
+                >
+                    Simular pago aprobado
+                </button>
+
+                <button
+                    type="submit"
+                    name="resultado"
+                    value="rechazado"
+                >
+                    Simular pago rechazado
+                </button>
+            </form>
+        </section>
+
+    {% elif compra.estado == "confirmada" %}
+        <section class="compra-bloque">
+            <h2>Compra confirmada</h2>
+
+            <p>
+                Pago simulado aprobado el
+                {{ compra.fecha_confirmacion|date:"d/m/Y H:i" }}.
+            </p>
+
+            <p>Podés consultar arriba el estado de cada pedido.</p>
+        </section>
+
+    {% elif compra.estado == "rechazada" or compra.estado == "cancelada" %}
+        <p>
+            Para volver a comprar,
+            <a href="{% url 'carrito:detalle' %}">
+                revisá tu carrito y generá una nueva compra
+            </a>.
+        </p>
+    {% endif %}
 {% endblock %}

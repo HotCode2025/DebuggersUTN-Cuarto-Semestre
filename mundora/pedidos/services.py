@@ -265,3 +265,185 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada):
 
     # Devuelve la compra recién cuando todos sus detalles están guardados.
     return compra, True
+def _rechazar_compra(compra, motivo):
+    """Registra el rechazo y cancela sus pedidos sin modificar stock."""
+
+    compra.estado = Compra.Estado.RECHAZADA
+    compra.motivo_rechazo = motivo[:250]
+    compra.save(
+        update_fields=[
+            "estado",
+            "motivo_rechazo",
+            "fecha_actualizacion",
+        ],
+    )
+
+    compra.pedidos.filter(
+        estado=Pedido.Estado.PENDIENTE,
+    ).update(
+        estado=Pedido.Estado.CANCELADO,
+        fecha_actualizacion=timezone.now(),
+    )
+
+
+@transaction.atomic
+def procesar_pago_simulado(usuario, codigo, resultado):
+    """Confirma o rechaza una compra propia de manera indivisible."""
+
+    if resultado not in {"aprobado", "rechazado"}:
+        raise ValidationError("El resultado del pago no es válido.")
+
+    # Mantiene el mismo orden de bloqueo que la creación de compras.
+    User.objects.select_for_update().get(pk=usuario.pk)
+
+    carrito = Carrito.objects.select_for_update().filter(
+        usuario=usuario,
+    ).first()
+
+    compra = Compra.objects.select_for_update().get(
+        codigo=codigo,
+        comprador=usuario,
+    )
+
+    # Una compra ya procesada no vuelve a modificar stock ni carrito.
+    if compra.estado != Compra.Estado.PENDIENTE:
+        return compra, False
+
+    pedidos = list(compra.pedidos.all())
+    detalles = list(
+        DetallePedido.objects.filter(
+            pedido__compra=compra,
+        ).order_by("pk")
+    )
+
+    # Impide confirmar compras vacías o con pedidos incompletos.
+    ids_con_detalles = {detalle.pedido_id for detalle in detalles}
+
+    if (
+        not pedidos
+        or any(pedido.pk not in ids_con_detalles for pedido in pedidos)
+        or any(
+            pedido.estado != Pedido.Estado.PENDIENTE
+            for pedido in pedidos
+        )
+    ):
+        _rechazar_compra(
+            compra,
+            "La compra está incompleta. Revisá el carrito y creá otra compra.",
+        )
+        return compra, True
+
+    if resultado == "rechazado":
+        _rechazar_compra(
+            compra,
+            "El pago simulado fue rechazado. No se realizó ningún cargo.",
+        )
+        return compra, True
+
+    # Suma las unidades requeridas por cada variante.
+    cantidades = {}
+
+    for detalle in detalles:
+        if detalle.variante_id is None:
+            _rechazar_compra(
+                compra,
+                "Un artículo ya no existe. Revisá el carrito.",
+            )
+            return compra, True
+
+        cantidades[detalle.variante_id] = (
+            cantidades.get(detalle.variante_id, 0)
+            + detalle.cantidad
+        )
+
+    # Bloquea las variantes en un orden estable hasta terminar.
+    variantes = {
+        variante.pk: variante
+        for variante in Variante.objects.select_for_update()
+        .filter(pk__in=cantidades)
+        .order_by("pk")
+    }
+
+    ids_visibles = set(
+        productos_visibles()
+        .filter(
+            pk__in=[
+                variante.producto_id
+                for variante in variantes.values()
+            ],
+        )
+        .values_list("pk", flat=True)
+    )
+
+    # Comprueba todos los artículos antes de descontar una sola unidad.
+    for variante_id, cantidad in cantidades.items():
+        variante = variantes.get(variante_id)
+
+        if variante is None:
+            _rechazar_compra(
+                compra,
+                "Un artículo ya no está disponible. Revisá el carrito.",
+            )
+            return compra, True
+
+        motivo = motivo_no_disponible(
+            variante,
+            variante.producto_id in ids_visibles,
+            cantidad,
+        )
+
+        if motivo:
+            _rechazar_compra(
+                compra,
+                f"No se pudo confirmar la compra: {variante}. {motivo}",
+            )
+            return compra, True
+
+    # Descuenta stock únicamente cuando toda la compra es válida.
+    for variante_id, cantidad in cantidades.items():
+        variante = variantes[variante_id]
+        variante.stock -= cantidad
+        variante.save(update_fields=["stock"])
+
+    compra.estado = Compra.Estado.CONFIRMADA
+    compra.motivo_rechazo = ""
+    compra.fecha_confirmacion = timezone.now()
+    compra.save(
+        update_fields=[
+            "estado",
+            "motivo_rechazo",
+            "fecha_confirmacion",
+            "fecha_actualizacion",
+        ],
+    )
+
+    compra.pedidos.update(
+        estado=Pedido.Estado.PREPARACION,
+        fecha_actualizacion=timezone.now(),
+    )
+
+    # Retira del carrito las cantidades compradas.
+    # Conserva otros artículos y las unidades adicionales.
+    if carrito is not None:
+        items = ItemCarrito.objects.filter(
+            carrito=carrito,
+            variante_id__in=cantidades,
+        )
+
+        for item in items:
+            cantidad_restante = (
+                item.cantidad - cantidades[item.variante_id]
+            )
+
+            if cantidad_restante <= 0:
+                item.delete()
+            else:
+                item.cantidad = cantidad_restante
+                item.save(
+                    update_fields=[
+                        "cantidad",
+                        "fecha_actualizacion",
+                    ],
+                )
+
+    return compra, True
