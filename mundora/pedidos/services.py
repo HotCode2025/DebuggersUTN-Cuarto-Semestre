@@ -10,6 +10,7 @@ from carrito.models import Carrito, ItemCarrito
 from carrito.views import motivo_no_disponible
 from catalog.models import Variante
 from catalog.views_publicas import productos_visibles
+from decimal import Decimal
 
 from .models import Compra, DetallePedido, Pedido
 
@@ -447,3 +448,209 @@ def procesar_pago_simulado(usuario, codigo, resultado):
                 )
 
     return compra, True
+
+@transaction.atomic
+def cancelar_compra_pendiente(usuario, codigo):
+    """Cancela una compra propia sin pago y conserva su historial."""
+
+    # Coordina esta operación con la creación y el pago de compras.
+    User.objects.select_for_update().get(pk=usuario.pk)
+
+    compra = Compra.objects.select_for_update().get(
+        codigo=codigo,
+        comprador=usuario,
+    )
+
+    # Repetir la solicitud no vuelve a modificar la compra.
+    if compra.estado == Compra.Estado.CANCELADA:
+        return compra, False
+
+    if compra.estado != Compra.Estado.PENDIENTE:
+        raise ValidationError(
+            "Solo podés cancelar de esta manera una compra "
+            "pendiente de pago."
+        )
+
+    compra.estado = Compra.Estado.CANCELADA
+    compra.save(
+        update_fields=[
+            "estado",
+            "fecha_actualizacion",
+        ],
+    )
+
+    compra.pedidos.filter(
+        estado=Pedido.Estado.PENDIENTE,
+    ).update(
+        estado=Pedido.Estado.CANCELADO,
+        fecha_actualizacion=timezone.now(),
+    )
+
+    # No modifica stock ni carrito porque no hubo un pago confirmado.
+    return compra, True
+
+@transaction.atomic
+def cancelar_pedido_pagado(usuario, pedido_id):
+    """Cancela un pedido propio y repone sus unidades una sola vez."""
+
+    # Coordina las operaciones del comprador.
+    User.objects.select_for_update().get(pk=usuario.pk)
+
+    # Bloquea el pedido y su compra mientras se procesa la cancelación.
+    pedido = (
+        Pedido.objects.select_for_update()
+        .select_related("compra")
+        .get(
+            pk=pedido_id,
+            compra__comprador=usuario,
+            compra__estado=Compra.Estado.CONFIRMADA,
+        )
+    )
+
+    # Reconoce una cancelación que ya registró su reembolso.
+    if (
+        pedido.estado == Pedido.Estado.CANCELADO
+        and pedido.fecha_reembolso_simulado is not None
+    ):
+        return pedido, False
+
+    if pedido.estado != Pedido.Estado.PREPARACION:
+        raise ValidationError(
+            "Solo podés cancelar pedidos que estén en preparación."
+        )
+
+    if (
+        pedido.fecha_despacho is not None
+        or pedido.fecha_entrega is not None
+        or pedido.fecha_reembolso_simulado is not None
+    ):
+        raise ValidationError(
+            "El pedido tiene movimientos que impiden esta cancelación. "
+            "Se necesita una revisión administrativa."
+        )
+
+    detalles = list(pedido.detalles.all())
+
+    if not detalles:
+        raise ValidationError(
+            "El pedido no tiene artículos. "
+            "Se necesita una revisión administrativa."
+        )
+
+    cantidades = {}
+    importe = Decimal("0.00")
+
+    for detalle in detalles:
+        # No recrea variantes eliminadas ni inventa dónde reponer unidades.
+        if detalle.variante_id is None:
+            raise ValidationError(
+                "Una variante del pedido fue eliminada. "
+                "La cancelación requiere revisión administrativa; "
+                "no se realizaron cambios."
+            )
+
+        cantidades[detalle.variante_id] = (
+            cantidades.get(detalle.variante_id, 0)
+            + detalle.cantidad
+        )
+        importe += detalle.subtotal
+
+    if importe <= 0 or importe > Decimal("9999999999999999.99"):
+        raise ValidationError(
+            "El importe del pedido requiere revisión administrativa."
+        )
+
+    # Bloquea las variantes antes de reponer sus unidades.
+    variantes = {
+        variante.pk: variante
+        for variante in Variante.objects.select_for_update()
+        .filter(pk__in=cantidades)
+        .order_by("pk")
+    }
+
+    if len(variantes) != len(cantidades):
+        raise ValidationError(
+            "Una variante ya no existe. "
+            "No se realizaron cambios; se requiere revisión administrativa."
+        )
+
+    # Repone también variantes pausadas, sin volver a activarlas.
+    for variante_id, cantidad in cantidades.items():
+        variante = variantes[variante_id]
+        variante.stock += cantidad
+        variante.save(update_fields=["stock"])
+
+    ahora = timezone.now()
+
+    pedido.estado = Pedido.Estado.CANCELADO
+    pedido.fecha_cancelacion = ahora
+    pedido.importe_reembolso_simulado = importe
+    pedido.fecha_reembolso_simulado = ahora
+
+    pedido.save(
+        update_fields=[
+            "estado",
+            "fecha_cancelacion",
+            "importe_reembolso_simulado",
+            "fecha_reembolso_simulado",
+            "fecha_actualizacion",
+        ],
+    )
+
+    # Conserva los detalles históricos y no agrega artículos al carrito.
+    return pedido, True
+@transaction.atomic
+def solicitar_devolucion_pedido(usuario, pedido_id, motivo):
+    """Registra una solicitud propia sin modificar stock ni reembolsos."""
+
+    User.objects.select_for_update().get(pk=usuario.pk)
+
+    pedido = (
+        Pedido.objects.select_for_update()
+        .select_related("compra")
+        .get(
+            pk=pedido_id,
+            compra__comprador=usuario,
+            compra__estado=Compra.Estado.CONFIRMADA,
+        )
+    )
+
+    # Una solicitud repetida conserva su motivo y fecha originales.
+    if pedido.estado_devolucion != Pedido.EstadoDevolucion.SIN_SOLICITUD:
+        return pedido, False
+
+    if pedido.estado not in {
+        Pedido.Estado.ENVIADO,
+        Pedido.Estado.ENTREGADO,
+    }:
+        raise ValidationError(
+            "Solo podés solicitar devoluciones de pedidos enviados "
+            "o entregados."
+        )
+
+    if pedido.fecha_reembolso_simulado is not None:
+        raise ValidationError(
+            "Este pedido ya tiene un reembolso registrado."
+        )
+
+    motivo = motivo.strip()
+
+    if not motivo or len(motivo) > 1000:
+        raise ValidationError(
+            "Ingresá un motivo de entre 1 y 1000 caracteres."
+        )
+
+    pedido.estado_devolucion = Pedido.EstadoDevolucion.SOLICITADA
+    pedido.motivo_devolucion = motivo
+    pedido.fecha_solicitud_devolucion = timezone.now()
+
+    pedido.save(
+        update_fields=[
+            "estado_devolucion",
+            "motivo_devolucion",
+            "fecha_solicitud_devolucion",
+            "fecha_actualizacion",
+        ],
+    )
+
+    return pedido, True

@@ -51,4 +51,23 @@ urlpatterns = [
         views_vendedor.cambiar_publicacion_vendedor,
         name="cambiar_publicacion",
     ),
+        # Lista los pedidos confirmados de la tienda propia.
+    path(
+        "pedidos/",
+        views_vendedor.pedidos_vendedor,
+        name="pedidos",
+    ),
+
+    # Muestra únicamente un pedido perteneciente al vendedor.
+    path(
+        "pedidos/<int:pedido_id>/",
+        views_vendedor.detalle_pedido_vendedor,
+        name="detalle_pedido",
+    ),
+        # Permite registrar el transporte y el seguimiento de un pedido propio.
+    path(
+        "pedidos/<int:pedido_id>/despachar/",
+        views_vendedor.registrar_despacho_vendedor,
+        name="registrar_despacho",
+    ),
 ]

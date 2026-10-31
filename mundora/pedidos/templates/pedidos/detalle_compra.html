@@ -57,6 +57,139 @@
                         Pedido {{ pedido.pk }} ·
                         {{ pedido.get_estado_display }}
                     </p>
+                    <!-- Muestra el seguimiento independiente del pedido de cada tienda. -->
+                    {% if pedido.fecha_despacho %}
+                        <section>
+                            <h4>Seguimiento del envío</h4>
+
+                            <p>
+                                Transporte: {{ pedido.empresa_transporte }}
+                            </p>
+
+                            <p>
+                                Código de seguimiento:
+                                <strong>{{ pedido.codigo_seguimiento }}</strong>
+                            </p>
+
+                            <p>
+                                Despachado el
+                                {{ pedido.fecha_despacho|date:"d/m/Y H:i" }}
+                            </p>
+
+                            <p class="detalle-aclaracion">
+                                Consultá este código con la empresa de transporte.
+                            </p>
+                        </section>
+
+                    {% elif pedido.estado == "preparacion" %}
+                        <p>
+                            La tienda está preparando tu pedido.
+                            Los datos de seguimiento aparecerán cuando registre el despacho.
+                        </p>
+                    {% endif %}
+                    <!-- Permite confirmar la recepción de este pedido en particular. -->
+                    {% if compra.estado == "confirmada" and pedido.estado == "enviado" %}
+                        <form
+                            method="post"
+                            action="{% url 'pedidos:confirmar_recepcion' pedido.pk %}"
+                        >
+                            {% csrf_token %}
+
+                            <p>
+                                Confirmá únicamente cuando hayas recibido todos
+                                los artículos de este pedido.
+                            </p>
+
+                            <button type="submit">
+                                Confirmar recepción
+                            </button>
+                        </form>
+
+                    {% elif pedido.estado == "entregado" %}
+                        <p>
+                            <strong>Recepción confirmada.</strong>
+
+                            {% if pedido.fecha_entrega %}
+                                El {{ pedido.fecha_entrega|date:"d/m/Y H:i" }}.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                                        <!-- Permite cancelar únicamente el pedido de esta tienda. -->
+                    {% if compra.estado == "confirmada" and pedido.estado == "preparacion" %}
+                        <section>
+                            <h4>Cancelar este pedido</h4>
+
+                            <p>
+                                Se cancelarán todos los artículos de este pedido,
+                                se repondrán sus unidades y se registrará un reembolso simulado
+                                de ARS {{ pedido.subtotal|floatformat:"2g" }}.
+                                Los pedidos de otras tiendas no se modificarán.
+                            </p>
+
+                            <form
+                                method="post"
+                                action="{% url 'pedidos:cancelar_pedido' pedido.pk %}"
+                            >
+                                {% csrf_token %}
+
+                                <button type="submit">
+                                    Cancelar pedido y simular reembolso
+                                </button>
+                            </form>
+                        </section>
+                    {% endif %}
+
+                    <!-- Conserva visible el resultado económico de la cancelación. -->
+                    {% if pedido.fecha_reembolso_simulado %}
+                        <section>
+                            <h4>Reembolso simulado registrado</h4>
+
+                            <p>
+                                Importe: ARS
+                                {{ pedido.importe_reembolso_simulado|floatformat:"2g" }}
+                            </p>
+
+                            <p>
+                                Fecha:
+                                {{ pedido.fecha_reembolso_simulado|date:"d/m/Y H:i" }}
+                            </p>
+
+                            <p>
+                                Esta operación es de prueba y no mueve dinero real.
+                                El subtotal mostrado conserva el importe original del pedido.
+                            </p>
+                        </section>
+                    {% endif %}
+
+                     <!-- Permite solicitar y consultar la devolución de este pedido. -->
+                    {% if compra.estado == "confirmada" %}
+                        {% if pedido.estado_devolucion == "sin_solicitud" %}
+                            {% if pedido.estado == "enviado" or pedido.estado == "entregado" %}
+                                <p>
+                                    <a href="{% url 'pedidos:solicitar_devolucion' pedido.pk %}">
+                                        Solicitar devolución del pedido
+                                    </a>
+                                </p>
+                            {% endif %}
+                        {% else %}
+                            <section>
+                                <h4>Devolución</h4>
+
+                                <p>
+                                    Estado: {{ pedido.get_estado_devolucion_display }}
+                                </p>
+
+                                <p>
+                                    Solicitada el
+                                    {{ pedido.fecha_solicitud_devolucion|date:"d/m/Y H:i" }}.
+                                </p>
+
+                                <p><strong>Motivo:</strong></p>
+                                {{ pedido.motivo_devolucion|linebreaks }}
+                            </section>
+                        {% endif %}
+                    {% endif %}
+
 
                     {% for detalle in pedido.detalles.all %}
                         <article>
@@ -164,4 +297,26 @@
             </a>.
         </p>
     {% endif %}
+    <!-- Permite cancelar una compra que todavía no fue pagada. -->
+{% if compra.estado == "pendiente" %}
+    <section class="compra-bloque">
+        <h2>Cancelar compra pendiente</h2>
+
+        <p>
+            Se cancelarán todos los pedidos de esta compra.
+            Los artículos permanecerán en tu carrito.
+        </p>
+
+        <form
+            method="post"
+            action="{% url 'pedidos:cancelar_compra' compra.codigo %}"
+        >
+            {% csrf_token %}
+
+            <button type="submit">
+                Cancelar compra pendiente
+            </button>
+        </form>
+    </section>
+{% endif %}
 {% endblock %}

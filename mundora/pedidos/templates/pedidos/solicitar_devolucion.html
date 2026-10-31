@@ -1,0 +1,50 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Solicitar devolución | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'pedidos:detalle' pedido.compra.codigo %}">
+            ← Volver a la compra
+        </a>
+    </p>
+
+    <h1>Devolución del pedido {{ pedido.pk }}</h1>
+
+    <p>Tienda: {{ pedido.nombre_tienda }}</p>
+
+    <p>
+        La solicitud incluye todos los artículos de este pedido.
+        La tienda revisará el motivo antes de indicarte cómo continuar.
+    </p>
+
+    <p>
+        Enviar esta solicitud no genera un reembolso.
+        Esperá la respuesta de la tienda antes de devolver los artículos.
+    </p>
+
+    <!-- Registra el motivo de la devolución completa. -->
+    <section class="compra-bloque">
+        <form method="post">
+            {% csrf_token %}
+
+            {{ formulario.non_field_errors }}
+
+            {% for campo in formulario %}
+                <p>
+                    {{ campo.label_tag }}
+                    {{ campo }}
+                    {{ campo.errors }}
+
+                    {% if campo.help_text %}
+                        <small>{{ campo.help_text }}</small>
+                    {% endif %}
+                </p>
+            {% endfor %}
+
+            <button type="submit">
+                Enviar solicitud de devolución
+            </button>
+        </form>
+    </section>
+{% endblock %}

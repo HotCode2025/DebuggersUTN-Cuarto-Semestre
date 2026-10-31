@@ -122,6 +122,15 @@ class Pedido(models.Model):
         ENTREGADO = "entregado", "Entregado"
         CANCELADO = "cancelado", "Cancelado"
 
+    class EstadoDevolucion(models.TextChoices):
+        """Define el avance de la devolución del pedido completo."""
+
+        SIN_SOLICITUD = "sin_solicitud", "Sin solicitud"
+        SOLICITADA = "solicitada", "Solicitada"
+        ACEPTADA = "aceptada", "Aceptada: pendiente de recepción"
+        RECHAZADA = "rechazada", "Rechazada"
+        COMPLETADA = "completada", "Completada"
+
     compra = models.ForeignKey(
         Compra,
         on_delete=models.PROTECT,
@@ -158,6 +167,66 @@ class Pedido(models.Model):
         auto_now=True,
     )
 
+        # Datos de seguimiento correspondientes a este pedido.
+    empresa_transporte = models.CharField(
+        "empresa de transporte",
+        max_length=100,
+        blank=True,
+    )
+    codigo_seguimiento = models.CharField(
+        "código de seguimiento",
+        max_length=100,
+        blank=True,
+    )
+    fecha_despacho = models.DateTimeField(
+        "fecha de despacho",
+        null=True,
+        blank=True,
+    )
+        # Registra cuándo el comprador confirma la recepción.
+    fecha_entrega = models.DateTimeField(
+        "fecha de confirmación de recepción",
+        null=True,
+        blank=True,
+    )
+    # Conserva el resultado de una cancelación posterior al pago.
+    fecha_cancelacion = models.DateTimeField(
+        "fecha de cancelación",
+        null=True,
+        blank=True,
+    )
+    importe_reembolso_simulado = models.DecimalField(
+        "importe del reembolso simulado",
+        max_digits=18,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+        editable=False,
+    )
+    fecha_reembolso_simulado = models.DateTimeField(
+        "fecha del reembolso simulado",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+        # Registra una devolución independiente del estado de entrega.
+    estado_devolucion = models.CharField(
+        "estado de devolución",
+        max_length=20,
+        choices=EstadoDevolucion.choices,
+        default=EstadoDevolucion.SIN_SOLICITUD,
+    )
+    motivo_devolucion = models.TextField(
+        "motivo de devolución",
+        max_length=1000,
+        blank=True,
+    )
+    fecha_solicitud_devolucion = models.DateTimeField(
+        "fecha de solicitud de devolución",
+        null=True,
+        blank=True,
+    )
     class Meta:
         """Impide generar dos pedidos de la misma tienda en una compra."""
 

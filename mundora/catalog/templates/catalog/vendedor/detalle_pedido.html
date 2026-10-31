@@ -1,0 +1,164 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Pedido {{ pedido.pk }} | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'vendedores:pedidos' %}">
+            ← Volver a mis pedidos
+        </a>
+    </p>
+
+    <h1>Pedido {{ pedido.pk }}</h1>
+
+    <p>Tienda: {{ pedido.nombre_tienda }}</p>
+
+    <p>
+        <strong>Estado: {{ pedido.get_estado_display }}</strong>
+    </p>
+
+    <!-- Informa cuándo el comprador confirmó la recepción. -->
+    {% if pedido.fecha_entrega %}
+        <p>
+            El comprador confirmó la recepción el
+            {{ pedido.fecha_entrega|date:"d/m/Y H:i" }}.
+        </p>
+    {% endif %}
+    <p>
+        Compra confirmada el
+        {{ pedido.compra.fecha_confirmacion|date:"d/m/Y H:i" }}
+    </p>
+
+    <div class="compra-revision">
+        <!-- Utiliza el domicilio guardado al crear la compra. -->
+        <section class="compra-bloque">
+            <h2>Datos de entrega</h2>
+
+            <p>
+                <strong>{{ pedido.compra.destinatario }}</strong>
+            </p>
+
+            <p>Teléfono: {{ pedido.compra.telefono_contacto }}</p>
+            <p>{{ pedido.compra.calle }} {{ pedido.compra.numero }}</p>
+
+            {% if pedido.compra.detalle_direccion %}
+                <p>{{ pedido.compra.detalle_direccion }}</p>
+            {% endif %}
+
+            <p>
+                {{ pedido.compra.localidad }},
+                {{ pedido.compra.provincia }}
+            </p>
+
+            <p>Código postal: {{ pedido.compra.codigo_postal }}</p>
+        </section>
+
+        <!-- Muestra solo los artículos correspondientes a esta tienda. -->
+        <section class="compra-bloque">
+            <h2>Artículos del pedido</h2>
+
+            {% for detalle in pedido.detalles.all %}
+                <article class="compra-producto">
+                    <h3>{{ detalle.nombre_producto }}</h3>
+
+                    {% if detalle.marca %}
+                        <p>Marca: {{ detalle.marca }}</p>
+                    {% endif %}
+
+                    <p>
+                        Color: {{ detalle.color|default:"Sin especificar" }}
+                    </p>
+                    <p>
+                        Medidas: {{ detalle.medidas|default:"Sin especificar" }}
+                    </p>
+                    <p>
+                        Material: {{ detalle.material|default:"Sin especificar" }}
+                    </p>
+
+                    <p><strong>Cantidad: {{ detalle.cantidad }}</strong></p>
+
+                    <p>
+                        Precio unitario:
+                        ARS {{ detalle.precio_unitario|floatformat:"2g" }}
+                    </p>
+
+                    <p>
+                        Subtotal:
+                        ARS {{ detalle.subtotal|floatformat:"2g" }}
+                    </p>
+                </article>
+            {% endfor %}
+
+            <p class="carrito-total">
+                Total de productos:
+                ARS {{ pedido.subtotal|floatformat:"2g" }}
+            </p>
+
+            <p class="detalle-aclaracion">
+                Importe correspondiente a esta tienda.
+                No incluye costos de envío.
+            </p>
+        </section>
+    </div>
+        <!-- Muestra la acción disponible o los datos del envío registrado. -->
+    <section class="compra-bloque">
+        <h2>Despacho</h2>
+
+        {% if pedido.estado == "preparacion" %}
+            <p>El pedido está pendiente de despacho.</p>
+
+            <a href="{% url 'vendedores:registrar_despacho' pedido.pk %}">
+                Registrar despacho
+            </a>
+
+        {% elif pedido.fecha_despacho %}
+            <p>
+                Transporte: {{ pedido.empresa_transporte }}
+            </p>
+            <p>
+                Código de seguimiento: {{ pedido.codigo_seguimiento }}
+            </p>
+            <p>
+                Despachado el
+                {{ pedido.fecha_despacho|date:"d/m/Y H:i" }}
+            </p>
+
+        {% else %}
+            <p>No hay un despacho registrado para este pedido.</p>
+        {% endif %}
+    </section>
+    <!-- Informa la cancelación y el reembolso del pedido. -->
+    {% if pedido.fecha_reembolso_simulado %}
+        <section class="compra-bloque">
+            <h2>Pedido cancelado y reembolso simulado</h2>
+
+            <p>
+                Cancelado el
+                {{ pedido.fecha_cancelacion|date:"d/m/Y H:i" }}.
+            </p>
+
+            <p>
+                Reembolso simulado:
+                ARS {{ pedido.importe_reembolso_simulado|floatformat:"2g" }}.
+            </p>
+
+            <p>Las unidades del pedido fueron repuestas al stock.</p>
+        </section>
+    {% endif %}
+    <!-- Muestra la solicitud presentada por el comprador. -->
+    {% if pedido.estado_devolucion != "sin_solicitud" %}
+        <section class="compra-bloque">
+            <h2>Solicitud de devolución</h2>
+
+            <p>Estado: {{ pedido.get_estado_devolucion_display }}</p>
+
+            <p>
+                Solicitada el
+                {{ pedido.fecha_solicitud_devolucion|date:"d/m/Y H:i" }}.
+            </p>
+
+            <p><strong>Motivo del comprador:</strong></p>
+            {{ pedido.motivo_devolucion|linebreaks }}
+        </section>
+    {% endif %}
+{% endblock %}

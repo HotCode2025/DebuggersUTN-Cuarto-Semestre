@@ -40,7 +40,16 @@
                     {{ tienda.observaciones_revision|linebreaks }}
                 {% endif %}
             </section>
+                <!-- Permite consultar los pedidos confirmados de la tienda. -->
+            <section>
+                <h2>Mis pedidos</h2>
 
+                <p>
+                    <a href="{% url 'vendedores:pedidos' %}">
+                        Ver pedidos de mi tienda
+                    </a>
+                </p>
+            </section>
             <!-- Lista únicamente las publicaciones de esta tienda. -->
             <section>
                 <h2>Mis productos</h2>

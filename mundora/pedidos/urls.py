@@ -41,4 +41,28 @@ urlpatterns = [
         views.mis_compras,
         name="mis_compras",
     ),
+        # Confirma la recepción de un pedido del comprador autenticado.
+    path(
+        "pedidos/<int:pedido_id>/confirmar-recepcion/",
+        views.confirmar_recepcion,
+        name="confirmar_recepcion",
+    ),
+        # Cancela una compra pendiente mediante una solicitud POST.
+    path(
+        "<uuid:codigo>/cancelar/",
+        views.cancelar_compra,
+        name="cancelar_compra",
+    ),
+        # Cancela un pedido pagado que todavía está en preparación.
+    path(
+        "pedidos/<int:pedido_id>/cancelar/",
+        views.cancelar_pedido,
+        name="cancelar_pedido",
+    ),
+        # Permite solicitar la devolución de un pedido propio.
+    path(
+        "pedidos/<int:pedido_id>/devolucion/",
+        views.solicitar_devolucion,
+        name="solicitar_devolucion",
+    ),
 ]

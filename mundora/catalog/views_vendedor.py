@@ -3,6 +3,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from django.contrib import messages
 from django.db import transaction, IntegrityError
+from django.core.paginator import Paginator
+from pedidos.models import Compra, Pedido
+from django.utils import timezone
+from pedidos.forms import FormularioDespacho
 
 from .forms_vendedor import (FormularioProductoVendedor, FormularioVariantesVendedor, FormularioGaleriaVendedor)
 from .models import Producto, Tienda
@@ -624,4 +628,136 @@ def cambiar_publicacion_vendedor(request, producto_id):
     return redirect(
         "vendedores:detalle_producto",
         producto_id=producto.pk,
+    )
+@login_required
+@require_GET
+def pedidos_vendedor(request):
+    """Lista los pedidos confirmados de la tienda del usuario."""
+
+    tienda = get_object_or_404(
+        Tienda,
+        propietario=request.user,
+    )
+
+    pedidos = (
+        Pedido.objects.filter(
+            tienda=tienda,
+            compra__estado=Compra.Estado.CONFIRMADA,
+        )
+        .select_related("compra")
+        .prefetch_related("detalles")
+        .order_by("-fecha_creacion", "-pk")
+    )
+
+    paginador = Paginator(pedidos, 10)
+    pagina = paginador.get_page(request.GET.get("pagina"))
+
+    return render(
+        request,
+        "catalog/vendedor/pedidos.html",
+        {
+            "tienda": tienda,
+            "pagina": pagina,
+        },
+    )
+
+
+@login_required
+@require_GET
+def detalle_pedido_vendedor(request, pedido_id):
+    """Muestra los artículos y la entrega de un pedido propio."""
+
+    pedidos_propios = (
+        Pedido.objects.filter(
+            tienda__propietario=request.user,
+            compra__estado=Compra.Estado.CONFIRMADA,
+        )
+        .select_related("compra", "tienda")
+        .prefetch_related("detalles")
+    )
+
+    pedido = get_object_or_404(
+        pedidos_propios,
+        pk=pedido_id,
+    )
+
+    return render(
+        request,
+        "catalog/vendedor/detalle_pedido.html",
+        {"pedido": pedido},
+    )
+
+@login_required
+@require_http_methods(["GET", "POST"])
+@transaction.atomic
+def registrar_despacho_vendedor(request, pedido_id):
+    """Registra una sola vez el despacho de un pedido propio."""
+
+    pedidos_propios = Pedido.objects.filter(
+        tienda__propietario=request.user,
+        compra__estado=Compra.Estado.CONFIRMADA,
+    ).select_related("compra")
+
+    # Bloquea los registros durante el cambio de estado.
+    if request.method == "POST":
+        pedidos_propios = pedidos_propios.select_for_update()
+
+    pedido = get_object_or_404(
+        pedidos_propios,
+        pk=pedido_id,
+    )
+
+    # Impide despachar de nuevo o modificar estados posteriores.
+    if pedido.estado != Pedido.Estado.PREPARACION:
+        messages.info(
+            request,
+            "Solo podés despachar pedidos que estén en preparación. "
+            "No se realizaron cambios.",
+        )
+        return redirect(
+            "vendedores:detalle_pedido",
+            pedido_id=pedido.pk,
+        )
+
+    if request.method == "POST":
+        formulario = FormularioDespacho(request.POST)
+
+        if formulario.is_valid():
+            pedido.empresa_transporte = (
+                formulario.cleaned_data["empresa_transporte"]
+            )
+            pedido.codigo_seguimiento = (
+                formulario.cleaned_data["codigo_seguimiento"]
+            )
+            pedido.fecha_despacho = timezone.now()
+            pedido.estado = Pedido.Estado.ENVIADO
+
+            pedido.save(
+                update_fields=[
+                    "empresa_transporte",
+                    "codigo_seguimiento",
+                    "fecha_despacho",
+                    "estado",
+                    "fecha_actualizacion",
+                ],
+            )
+
+            messages.success(
+                request,
+                "Despacho registrado. El pedido quedó marcado como enviado.",
+            )
+            return redirect(
+                "vendedores:detalle_pedido",
+                pedido_id=pedido.pk,
+            )
+    else:
+        formulario = FormularioDespacho()
+
+    return render(
+        request,
+        "catalog/vendedor/registrar_despacho.html",
+        {
+            "pedido": pedido,
+            "formulario": formulario,
+        },
     )
