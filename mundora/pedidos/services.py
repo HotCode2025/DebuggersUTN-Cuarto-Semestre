@@ -27,6 +27,20 @@ CAMPOS_DOMICILIO = (
     "detalle_direccion",
 )
 
+def direccion_retiro_tienda(tienda):
+    """Construye la dirección que se conservará en el pedido."""
+
+    direccion = (
+        f"{tienda.calle} {tienda.numero}, "
+        f"{tienda.localidad}, {tienda.provincia}. "
+        f"CP {tienda.codigo_postal}."
+    )
+
+    if tienda.detalle_direccion:
+        direccion += f" {tienda.detalle_direccion}"
+
+    return direccion
+
 
 def huella_revision(items, domicilio):
     """Identifica los datos mostrados para detectar cambios posteriores."""
@@ -47,7 +61,7 @@ def huella_revision(items, domicilio):
                 "medidas": item.variante.medidas,
                 "material": item.variante.material,
                 "tienda": item.variante.producto.tienda_id,
-                "nombre_tienda": item.variante.producto.tienda.nombre,
+                "direccion_tienda": direccion_retiro_tienda(item.variante.producto.tienda,),
             }
             for item in sorted(items, key=lambda item: item.variante_id)
         ],
@@ -101,7 +115,7 @@ def _cancelar_pendientes_anteriores(usuario, conservar_id=None):
     )
 
 @transaction.atomic
-def crear_compra_pendiente(usuario, codigo, huella_esperada):
+def crear_compra_pendiente(usuario, codigo, huella_esperada,modalidades):
     """Crea o reutiliza una compra completa sin descontar stock."""
 
     # Serializa la creación para este usuario y sus cambios de domicilio.
@@ -204,13 +218,54 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada):
             "Revisá los datos actualizados antes de continuar."
         )
 
+        # Exige una elección válida para cada tienda del carrito.
+    ids_tiendas = {
+        str(item.variante.producto.tienda_id)
+        for item in items
+    }
+
+    if (
+        not isinstance(modalidades, dict)
+        or set(modalidades) != ids_tiendas
+    ):
+        raise ValidationError(
+            "Seleccioná una modalidad de entrega para cada tienda."
+        )
+
+    modalidades_validas = {
+        Pedido.ModalidadEntrega.ENVIO,
+        Pedido.ModalidadEntrega.RETIRO,
+    }
+
+    if any(
+        modalidad not in modalidades_validas
+        for modalidad in modalidades.values()
+    ):
+        raise ValidationError(
+            "Una modalidad de entrega no es válida. Revisá la compra."
+        )
+
+    # Distingue compras con los mismos artículos y distinta entrega.
+    contenido_entrega = json.dumps(
+        {
+            "revision": huella_actual,
+            "modalidades": modalidades,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+    huella_compra = hashlib.sha256(
+        contenido_entrega.encode("utf-8"),
+    ).hexdigest()
+
     # Busca una compra coincidente que tenga pedidos con detalles.
     # Excluye las compras vacías producidas por el error anterior.
     coincidente = (
         Compra.objects.filter(
             comprador=usuario,
             estado=Compra.Estado.PENDIENTE,
-            huella_revision=huella_actual,
+            huella_revision=huella_compra,
             pedidos__detalles__isnull=False,
         )
         .distinct()
@@ -230,7 +285,7 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada):
     compra = Compra.objects.create(
         codigo=codigo,
         comprador=usuario,
-        huella_revision=huella_actual,
+        huella_revision=huella_compra,
         **{
             campo: getattr(domicilio, campo)
             for campo in CAMPOS_DOMICILIO
@@ -246,11 +301,20 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada):
         tienda = producto.tienda
 
         if tienda.pk not in pedidos_por_tienda:
+            modalidad = modalidades[str(tienda.pk)]
+
             pedidos_por_tienda[tienda.pk] = Pedido.objects.create(
                 compra=compra,
                 tienda=tienda,
                 nombre_tienda=tienda.nombre,
+                modalidad_entrega=modalidad,
+                direccion_retiro=(
+                    direccion_retiro_tienda(tienda)
+                    if modalidad == Pedido.ModalidadEntrega.RETIRO
+                    else ""
+                ),
             )
+
 
         DetallePedido.objects.create(
             pedido=pedidos_por_tienda[tienda.pk],
@@ -514,9 +578,19 @@ def cancelar_pedido_pagado(usuario, pedido_id):
     ):
         return pedido, False
 
-    if pedido.estado != Pedido.Estado.PREPARACION:
+        # Un retiro preparado sigue siendo cancelable hasta su entrega.
+    puede_cancelar = (
+        pedido.estado == Pedido.Estado.PREPARACION
+        or (
+            pedido.modalidad_entrega == Pedido.ModalidadEntrega.RETIRO
+            and pedido.estado == Pedido.Estado.LISTO_RETIRO
+        )
+    )
+
+    if not puede_cancelar:
         raise ValidationError(
-            "Solo podés cancelar pedidos que estén en preparación."
+            "Solo podés cancelar pedidos en preparación "
+            "o retiros listos que todavía no fueron entregados."
         )
 
     if (
@@ -649,6 +723,121 @@ def solicitar_devolucion_pedido(usuario, pedido_id, motivo):
             "estado_devolucion",
             "motivo_devolucion",
             "fecha_solicitud_devolucion",
+            "fecha_actualizacion",
+        ],
+    )
+
+    return pedido, True
+
+@transaction.atomic
+def completar_devolucion_pedido(
+    usuario, pedido_id, reponer_stock, observaciones
+):
+    """Recibe la devolución y registra una sola vez el reembolso."""
+
+    pedido = (
+        Pedido.objects.select_for_update()
+        .select_related("compra")
+        .get(
+            pk=pedido_id,
+            tienda__propietario=usuario,
+            compra__estado=Compra.Estado.CONFIRMADA,
+        )
+    )
+
+    # Conserva el resultado original ante solicitudes repetidas.
+    if pedido.estado_devolucion == Pedido.EstadoDevolucion.COMPLETADA:
+        return pedido, False
+
+    if pedido.estado_devolucion != Pedido.EstadoDevolucion.ACEPTADA:
+        raise ValidationError(
+            "Solo podés recibir una devolución previamente aceptada."
+        )
+
+    if pedido.estado not in {
+        Pedido.Estado.ENVIADO,
+        Pedido.Estado.ENTREGADO,
+    }:
+        raise ValidationError(
+            "El estado del pedido impide completar esta devolución."
+        )
+
+    if pedido.fecha_reembolso_simulado is not None:
+        raise ValidationError("El pedido ya tiene un reembolso registrado.")
+
+    observaciones = observaciones.strip()
+
+    if (
+        type(reponer_stock) is not bool
+        or not observaciones
+        or len(observaciones) > 1500
+    ):
+        raise ValidationError("Los datos de recepción no son válidos.")
+
+    detalles = list(pedido.detalles.all())
+
+    if not detalles:
+        raise ValidationError("El pedido no tiene artículos registrados.")
+
+    importe = sum(
+        (detalle.subtotal for detalle in detalles),
+        Decimal("0.00"),
+    )
+
+    if importe <= 0 or importe > Decimal("9999999999999999.99"):
+        raise ValidationError("El importe requiere revisión administrativa.")
+
+    if reponer_stock:
+        cantidades = {}
+
+        for detalle in detalles:
+            if detalle.variante_id is None:
+                raise ValidationError(
+                    "Una variante fue eliminada y no se puede reponer. "
+                    "No se realizaron cambios."
+                )
+
+            cantidades[detalle.variante_id] = (
+                cantidades.get(detalle.variante_id, 0)
+                + detalle.cantidad
+            )
+
+        variantes = {
+            variante.pk: variante
+            for variante in Variante.objects.select_for_update()
+            .filter(pk__in=cantidades)
+            .order_by("pk")
+        }
+
+        if len(variantes) != len(cantidades):
+            raise ValidationError(
+                "Una variante ya no existe. No se realizaron cambios."
+            )
+
+        for variante_id, cantidad in cantidades.items():
+            variante = variantes[variante_id]
+            variante.stock += cantidad
+            variante.save(update_fields=["stock"])
+
+    ahora = timezone.now()
+
+    pedido.estado = Pedido.Estado.DEVUELTO
+    pedido.estado_devolucion = Pedido.EstadoDevolucion.COMPLETADA
+    pedido.fecha_recepcion_devolucion = ahora
+    pedido.observaciones_recepcion_devolucion = observaciones
+    pedido.stock_repuesto_devolucion = reponer_stock
+    pedido.importe_reembolso_simulado = importe
+    pedido.fecha_reembolso_simulado = ahora
+
+    pedido.save(
+        update_fields=[
+            "estado",
+            "estado_devolucion",
+            "fecha_recepcion_devolucion",
+            "observaciones_recepcion_devolucion",
+            "stock_repuesto_devolucion",
+            "importe_reembolso_simulado",
+            "fecha_reembolso_simulado",
             "fecha_actualizacion",
         ],
     )

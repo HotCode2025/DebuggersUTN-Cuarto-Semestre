@@ -1,0 +1,57 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Responder devolución | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'vendedores:detalle_pedido' pedido.pk %}">
+            ← Volver al pedido
+        </a>
+    </p>
+
+    <h1>Responder devolución del pedido {{ pedido.pk }}</h1>
+
+    <!-- Presenta el motivo original del comprador. -->
+    <section class="compra-bloque">
+        <h2>Solicitud del comprador</h2>
+
+        <p>
+            Solicitada el
+            {{ pedido.fecha_solicitud_devolucion|date:"d/m/Y H:i" }}.
+        </p>
+
+        {{ pedido.motivo_devolucion|linebreaks }}
+    </section>
+
+    <!-- Registra la decisión y una explicación obligatoria. -->
+    <section class="compra-bloque">
+        <h2>Respuesta de la tienda</h2>
+
+        <p>
+            Si aceptás, indicá cómo debe devolver los artículos.
+            La aceptación no genera un reembolso ni repone stock.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {{ formulario.non_field_errors }}
+
+            {% for campo in formulario %}
+                <p>
+                    {{ campo.label_tag }}
+                    {{ campo }}
+                    {{ campo.errors }}
+
+                    {% if campo.help_text %}
+                        <small>{{ campo.help_text }}</small>
+                    {% endif %}
+                </p>
+            {% endfor %}
+
+            <button type="submit">
+                Guardar respuesta
+            </button>
+        </form>
+    </section>
+{% endblock %}

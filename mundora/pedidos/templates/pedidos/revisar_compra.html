@@ -45,6 +45,11 @@
                 aria-labelledby="titulo-entrega"
             >
                 <h2 id="titulo-entrega">Domicilio de entrega</h2>
+                
+                    <p>
+                        Este domicilio se utilizará para las tiendas
+                        en las que elijas envío a domicilio.
+                    </p>
 
                 <dl class="detalle-datos">
                     <dt>Recibe</dt>
@@ -153,9 +158,46 @@
                         value="{{ token_revision }}"
                     >
 
-                    <button type="submit">
-                        Crear compra pendiente
-                    </button>
+                    <h3>¿Cómo querés recibir tus productos?</h3>
+
+                    {% for tienda in tiendas %}
+                        <fieldset>
+                            <legend>{{ tienda.nombre }}</legend>
+
+                            <p>
+                                <label for="entrega-{{ tienda.pk }}">
+                                    Modalidad de entrega
+                                </label>
+
+                                <select
+                                    id="entrega-{{ tienda.pk }}"
+                                    name="entrega_{{ tienda.pk }}"
+                                    required
+                                >
+                                    <option value="envio">Envío a domicilio</option>
+                                    <option value="retiro">Retiro en tienda</option>
+                                </select>
+                            </p>
+
+                            <p>
+                                <strong>Dirección para retirar:</strong>
+                                {{ tienda.calle }} {{ tienda.numero }},
+                                {{ tienda.localidad }},
+                                {{ tienda.provincia }}.
+                                CP {{ tienda.codigo_postal }}.
+                                {% if tienda.detalle_direccion %}
+                                    {{ tienda.detalle_direccion }}
+                                {% endif %}
+                            </p>
+
+                            <p>
+                                Si elegís retiro, esperá a que el vendedor indique
+                                que el pedido está listo antes de ir.
+                            </p>
+                        </fieldset>
+                    {% endfor %}
+
+                    <button type="submit">Crear compra pendiente</button>
                 </form>
             </section>
         </div>

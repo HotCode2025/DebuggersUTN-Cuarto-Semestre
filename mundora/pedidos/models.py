@@ -118,9 +118,17 @@ class Pedido(models.Model):
 
         PENDIENTE = "pendiente", "Pendiente de confirmación"
         PREPARACION = "preparacion", "En preparación"
+        LISTO_RETIRO = "listo_retiro", "Listo para retirar" 
         ENVIADO = "enviado", "Enviado"
         ENTREGADO = "entregado", "Entregado"
         CANCELADO = "cancelado", "Cancelado"
+        DEVUELTO = "devuelto", "Devuelto"
+
+    class ModalidadEntrega(models.TextChoices):
+        """Define cómo recibirá el comprador los artículos de la tienda."""
+
+        ENVIO = "envio", "Envío a domicilio"
+        RETIRO = "retiro", "Retiro en tienda"
 
     class EstadoDevolucion(models.TextChoices):
         """Define el avance de la devolución del pedido completo."""
@@ -151,6 +159,29 @@ class Pedido(models.Model):
         max_length=150,
     )
 
+        # Conserva la modalidad elegida para esta tienda.
+    modalidad_entrega = models.CharField(
+        "modalidad de entrega",
+        max_length=10,
+        choices=ModalidadEntrega.choices,
+        default=ModalidadEntrega.ENVIO,
+    )
+
+    # Copia la dirección acordada para conservar el historial.
+    direccion_retiro = models.TextField(
+        "dirección de retiro al comprar",
+        blank=True,
+        editable=False,
+    )
+
+    # Registra cuándo el vendedor deja preparado el pedido.
+    fecha_listo_retiro = models.DateTimeField(
+        "fecha en que quedó listo para retirar",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    
     estado = models.CharField(
         "estado",
         max_length=20,
@@ -227,6 +258,34 @@ class Pedido(models.Model):
         null=True,
         blank=True,
     )
+    # Conserva la explicación del vendedor y cuándo respondió.
+    respuesta_devolucion = models.TextField(
+        "respuesta a la devolución",
+        max_length=1500,
+        blank=True,
+    )
+    fecha_respuesta_devolucion = models.DateTimeField(
+        "fecha de respuesta a la devolución",
+        null=True,
+        blank=True,
+    )
+
+        # Registra la recepción física y el resultado de la revisión.
+    fecha_recepcion_devolucion = models.DateTimeField(
+        "fecha de recepción de la devolución",
+        null=True,
+        blank=True,
+    )
+    observaciones_recepcion_devolucion = models.TextField(
+        "observaciones de recepción de la devolución",
+        max_length=1500,
+        blank=True,
+    )
+    stock_repuesto_devolucion = models.BooleanField(
+        "stock repuesto por devolución",
+        default=False,
+    )
+
     class Meta:
         """Impide generar dos pedidos de la misma tienda en una compra."""
 

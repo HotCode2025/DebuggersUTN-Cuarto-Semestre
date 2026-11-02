@@ -70,4 +70,22 @@ urlpatterns = [
         views_vendedor.registrar_despacho_vendedor,
         name="registrar_despacho",
     ),
+        # Permite responder una devolución de la tienda propia.
+    path(
+        "pedidos/<int:pedido_id>/devolucion/responder/",
+        views_vendedor.responder_devolucion_vendedor,
+        name="responder_devolucion",
+    ),
+        # Registra la recepción de una devolución aceptada.
+    path(
+        "pedidos/<int:pedido_id>/devolucion/recibir/",
+        views_vendedor.recibir_devolucion_vendedor,
+        name="recibir_devolucion",
+    ),
+        # Permite avisar que un pedido está preparado para retirar.
+    path(
+        "pedidos/<int:pedido_id>/listo-retiro/",
+        views_vendedor.marcar_listo_retiro_vendedor,
+        name="marcar_listo_retiro",
+    ),
 ]

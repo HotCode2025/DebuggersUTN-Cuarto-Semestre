@@ -97,6 +97,18 @@ def revisar_compra(request):
             salt="pedidos.revision",
         )
 
+    # Muestra una sola opción de entrega por tienda del carrito.
+    tiendas_por_id = {
+        item.variante.producto.tienda_id: item.variante.producto.tienda
+        for item in items
+    }
+
+    tiendas = sorted(
+        tiendas_por_id.values(),
+        key=lambda tienda: tienda.pk,
+    )
+
+
     return render(
         request,
         "pedidos/revisar_compra.html",
@@ -106,6 +118,7 @@ def revisar_compra(request):
             "errores": errores,
             "total_productos": total_productos,
             "token_revision": token_revision,
+            "tiendas": tiendas,
         },
     )
 
@@ -145,11 +158,30 @@ def crear_compra(request):
         return redirect("pedidos:revisar")
 
     try:
+        # Recoge las elecciones y rechaza campos enviados más de una vez.
+        modalidades = {}
+
+        for nombre in request.POST:
+            if not nombre.startswith("entrega_"):
+                continue
+
+            valores = request.POST.getlist(nombre)
+
+            if len(valores) != 1:
+                raise ValidationError(
+                    "Se recibió más de una modalidad para una tienda."
+                )
+
+            tienda_id = nombre.removeprefix("entrega_")
+            modalidades[tienda_id] = valores[0]
+
         compra, creada = crear_compra_pendiente(
             request.user,
             codigo,
             huella,
+            modalidades,
         )
+
     except ValidationError as error:
         for mensaje in error.messages:
             messages.error(request, mensaje)
@@ -278,13 +310,23 @@ def confirmar_recepcion(request, pedido_id):
             request,
             "Ya habías confirmado la recepción de este pedido.",
         )
-
-    elif pedido.estado != Pedido.Estado.ENVIADO:
+    elif not (
+        (
+            pedido.modalidad_entrega == Pedido.ModalidadEntrega.ENVIO
+            and pedido.estado == Pedido.Estado.ENVIADO
+        )
+        or (
+            pedido.modalidad_entrega == Pedido.ModalidadEntrega.RETIRO
+            and pedido.estado == Pedido.Estado.LISTO_RETIRO
+        )
+    ):
         messages.error(
             request,
-            "Solo podés confirmar la recepción de un pedido enviado.",
+            "Solo podés confirmar un envío despachado "
+            "o un retiro que la tienda haya marcado como listo.",
         )
 
+    
     else:
         pedido.estado = Pedido.Estado.ENTREGADO
         pedido.fecha_entrega = timezone.now()

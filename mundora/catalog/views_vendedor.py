@@ -6,11 +6,13 @@ from django.db import transaction, IntegrityError
 from django.core.paginator import Paginator
 from pedidos.models import Compra, Pedido
 from django.utils import timezone
-from pedidos.forms import FormularioDespacho
-
+from pedidos.forms import FormularioDespacho, FormularioRespuestaDevolucion, FormularioRecepcionDevolucion
 from .forms_vendedor import (FormularioProductoVendedor, FormularioVariantesVendedor, FormularioGaleriaVendedor)
 from .models import Producto, Tienda
+from django.core.exceptions import ValidationError
+from django.http import Http404
 
+from pedidos.services import completar_devolucion_pedido
 
 @login_required
 @require_GET
@@ -706,6 +708,18 @@ def registrar_despacho_vendedor(request, pedido_id):
         pedidos_propios,
         pk=pedido_id,
     )
+        # Los retiros no utilizan transporte ni código de seguimiento.
+    if pedido.modalidad_entrega != Pedido.ModalidadEntrega.ENVIO:
+        messages.error(
+            request,
+            "Este pedido es para retirar en tienda. "
+            "No corresponde registrar un despacho.",
+        )
+        return redirect(
+            "vendedores:detalle_pedido",
+            pedido_id=pedido.pk,
+        )
+
 
     # Impide despachar de nuevo o modificar estados posteriores.
     if pedido.estado != Pedido.Estado.PREPARACION:
@@ -760,4 +774,236 @@ def registrar_despacho_vendedor(request, pedido_id):
             "pedido": pedido,
             "formulario": formulario,
         },
+    )
+
+@login_required
+@require_http_methods(["GET", "POST"])
+@transaction.atomic
+def responder_devolucion_vendedor(request, pedido_id):
+    """Permite responder una sola vez una devolución de la tienda propia."""
+
+    pedidos_propios = Pedido.objects.filter(
+        tienda__propietario=request.user,
+        compra__estado=Compra.Estado.CONFIRMADA,
+    ).select_related("compra")
+
+    # Evita que dos respuestas sobrescriban la misma solicitud.
+    if request.method == "POST":
+        pedidos_propios = pedidos_propios.select_for_update()
+
+    pedido = get_object_or_404(
+        pedidos_propios,
+        pk=pedido_id,
+    )
+
+    if pedido.estado_devolucion != Pedido.EstadoDevolucion.SOLICITADA:
+        messages.info(
+            request,
+            "Este pedido no tiene una solicitud pendiente de respuesta. "
+            "No se realizaron cambios.",
+        )
+        return redirect(
+            "vendedores:detalle_pedido",
+            pedido_id=pedido.pk,
+        )
+
+    # Comprueba que el pedido siga siendo válido para una devolución.
+    if (
+        pedido.estado not in {
+            Pedido.Estado.ENVIADO,
+            Pedido.Estado.ENTREGADO,
+        }
+        or pedido.fecha_reembolso_simulado is not None
+    ):
+        messages.error(
+            request,
+            "El estado actual del pedido impide responder esta devolución. "
+            "Se necesita una revisión administrativa.",
+        )
+        return redirect(
+            "vendedores:detalle_pedido",
+            pedido_id=pedido.pk,
+        )
+
+    if request.method == "POST":
+        formulario = FormularioRespuestaDevolucion(request.POST)
+
+        if formulario.is_valid():
+            decision = formulario.cleaned_data["decision"]
+
+            if decision == "aceptar":
+                pedido.estado_devolucion = (
+                    Pedido.EstadoDevolucion.ACEPTADA
+                )
+                mensaje = (
+                    "Devolución aceptada. Queda pendiente recibir "
+                    "los artículos; todavía no se registró un reembolso."
+                )
+            else:
+                pedido.estado_devolucion = (
+                    Pedido.EstadoDevolucion.RECHAZADA
+                )
+                mensaje = "Devolución rechazada. La respuesta quedó registrada."
+
+            pedido.respuesta_devolucion = (
+                formulario.cleaned_data["respuesta"]
+            )
+            pedido.fecha_respuesta_devolucion = timezone.now()
+
+            pedido.save(
+                update_fields=[
+                    "estado_devolucion",
+                    "respuesta_devolucion",
+                    "fecha_respuesta_devolucion",
+                    "fecha_actualizacion",
+                ],
+            )
+
+            messages.success(request, mensaje)
+
+            return redirect(
+                "vendedores:detalle_pedido",
+                pedido_id=pedido.pk,
+            )
+    else:
+        formulario = FormularioRespuestaDevolucion()
+
+    return render(
+        request,
+        "catalog/vendedor/responder_devolucion.html",
+        {
+            "pedido": pedido,
+            "formulario": formulario,
+        },
+    )
+@login_required
+@require_http_methods(["GET", "POST"])
+def recibir_devolucion_vendedor(request, pedido_id):
+    """Permite registrar la recepción de una devolución propia."""
+
+    pedido = get_object_or_404(
+        Pedido,
+        pk=pedido_id,
+        tienda__propietario=request.user,
+        compra__estado=Compra.Estado.CONFIRMADA,
+    )
+
+    if pedido.estado_devolucion != Pedido.EstadoDevolucion.ACEPTADA:
+        messages.info(
+            request,
+            "La devolución no está pendiente de recepción. "
+            "No se realizaron cambios.",
+        )
+        return redirect(
+            "vendedores:detalle_pedido",
+            pedido_id=pedido.pk,
+        )
+
+    if request.method == "POST":
+        formulario = FormularioRecepcionDevolucion(request.POST)
+
+        if formulario.is_valid():
+            try:
+                pedido, completada = completar_devolucion_pedido(
+                    request.user,
+                    pedido.pk,
+                    formulario.cleaned_data["reposicion"] == "si",
+                    formulario.cleaned_data["observaciones"],
+                )
+            except Pedido.DoesNotExist:
+                raise Http404("No se encontró el pedido.")
+            except ValidationError as error:
+                formulario.add_error(None, error)
+            else:
+                if completada:
+                    messages.success(
+                        request,
+                        "Devolución completada y reembolso simulado "
+                        "registrado.",
+                    )
+                else:
+                    messages.info(
+                        request,
+                        "Esta devolución ya estaba completada. "
+                        "No se realizaron cambios.",
+                    )
+
+                return redirect(
+                    "vendedores:detalle_pedido",
+                    pedido_id=pedido.pk,
+                )
+    else:
+        formulario = FormularioRecepcionDevolucion()
+
+    return render(
+        request,
+        "catalog/vendedor/recibir_devolucion.html",
+        {"pedido": pedido, "formulario": formulario},
+    )
+@login_required
+@require_POST
+@transaction.atomic
+def marcar_listo_retiro_vendedor(request, pedido_id):
+    """Marca una sola vez un pedido propio como listo para retirar."""
+
+    pedido = get_object_or_404(
+        Pedido.objects.select_for_update().select_related("compra"),
+        pk=pedido_id,
+        tienda__propietario=request.user,
+        compra__estado=Compra.Estado.CONFIRMADA,
+    )
+
+    if pedido.modalidad_entrega != Pedido.ModalidadEntrega.RETIRO:
+        messages.error(
+            request,
+            "Este pedido corresponde a un envío a domicilio.",
+        )
+
+    elif pedido.estado == Pedido.Estado.LISTO_RETIRO:
+        messages.info(
+            request,
+            "El pedido ya estaba listo para retirar.",
+        )
+
+    elif pedido.estado != Pedido.Estado.PREPARACION:
+        messages.error(
+            request,
+            "Solo podés preparar para retiro un pedido en preparación.",
+        )
+
+    elif (
+        pedido.fecha_despacho is not None
+        or pedido.fecha_entrega is not None
+        or pedido.fecha_reembolso_simulado is not None
+        or pedido.estado_devolucion
+        != Pedido.EstadoDevolucion.SIN_SOLICITUD
+        or not pedido.direccion_retiro.strip()
+    ):
+        messages.error(
+            request,
+            "El pedido tiene datos que requieren revisión. "
+            "No se realizaron cambios.",
+        )
+
+    else:
+        pedido.estado = Pedido.Estado.LISTO_RETIRO
+        pedido.fecha_listo_retiro = timezone.now()
+
+        pedido.save(
+            update_fields=[
+                "estado",
+                "fecha_listo_retiro",
+                "fecha_actualizacion",
+            ],
+        )
+
+        messages.success(
+            request,
+            "El pedido quedó listo para retirar. "
+            "El comprador puede consultar la dirección en su compra.",
+        )
+
+    return redirect(
+        "vendedores:detalle_pedido",
+        pedido_id=pedido.pk,
     )

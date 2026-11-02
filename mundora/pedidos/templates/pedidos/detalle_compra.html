@@ -33,6 +33,11 @@
         <section class="compra-bloque">
             <h2>Datos de entrega</h2>
 
+            <p>
+                Este domicilio corresponde a los pedidos con envío.
+                Los pedidos con retiro muestran su dirección junto a cada tienda.
+            </p>
+
             <p><strong>{{ compra.destinatario }}</strong></p>
             <p>{{ compra.telefono_contacto }}</p>
             <p>{{ compra.calle }} {{ compra.numero }}</p>
@@ -57,8 +62,41 @@
                         Pedido {{ pedido.pk }} ·
                         {{ pedido.get_estado_display }}
                     </p>
-                    <!-- Muestra el seguimiento independiente del pedido de cada tienda. -->
-                    {% if pedido.fecha_despacho %}
+
+                                        <p>
+                        <strong>Modalidad:</strong>
+                        {{ pedido.get_modalidad_entrega_display }}
+                    </p>
+
+                    <!-- Diferencia el retiro del seguimiento de un envío. -->
+                    {% if pedido.modalidad_entrega == "retiro" %}
+                        <section>
+                            <h4>Retiro en tienda</h4>
+                            <p>{{ pedido.direccion_retiro }}</p>
+
+                            {% if pedido.estado == "pendiente" %}
+                                <p>
+                                    El retiro se preparará después
+                                    de confirmar el pago.
+                                </p>
+                            {% elif pedido.estado == "preparacion" %}
+                                <p>
+                                    La tienda está preparando tus artículos.
+                                    Esperá a que indique que están listos.
+                                </p>
+                            {% elif pedido.estado == "listo_retiro" %}
+                                <p>
+                                    <strong>Tu pedido está listo para retirar.</strong>
+                                </p>
+                                <p>
+                                    Disponible desde el
+                                    {{ pedido.fecha_listo_retiro|date:"d/m/Y H:i" }}.
+                                </p>
+                            {% endif %}
+                        </section>
+
+                    {% elif pedido.fecha_despacho %}
+                  
                         <section>
                             <h4>Seguimiento del envío</h4>
 
@@ -88,7 +126,7 @@
                         </p>
                     {% endif %}
                     <!-- Permite confirmar la recepción de este pedido en particular. -->
-                    {% if compra.estado == "confirmada" and pedido.estado == "enviado" %}
+                    {% if compra.estado == "confirmada" and pedido.estado == "enviado" or compra.estado == "confirmada" and pedido.estado == "listo_retiro" %}
                         <form
                             method="post"
                             action="{% url 'pedidos:confirmar_recepcion' pedido.pk %}"
@@ -114,8 +152,8 @@
                             {% endif %}
                         </p>
                     {% endif %}
-                                        <!-- Permite cancelar únicamente el pedido de esta tienda. -->
-                    {% if compra.estado == "confirmada" and pedido.estado == "preparacion" %}
+                     <!-- Permite cancelar únicamente el pedido de esta tienda. -->
+                    {% if compra.estado == "confirmada" and pedido.estado == "preparacion" or compra.estado == "confirmada" and pedido.estado == "listo_retiro" and pedido.modalidad_entrega == "retiro" %}
                         <section>
                             <h4>Cancelar este pedido</h4>
 
@@ -186,11 +224,43 @@
 
                                 <p><strong>Motivo:</strong></p>
                                 {{ pedido.motivo_devolucion|linebreaks }}
+                                <!-- Muestra la explicación registrada por el vendedor. -->
+                                {% if pedido.fecha_respuesta_devolucion %}
+                                    <h4>Respuesta de la tienda</h4>
+
+                                    {{ pedido.respuesta_devolucion|linebreaks }}
+
+                                    <p>
+                                        Respondida el
+                                        {{ pedido.fecha_respuesta_devolucion|date:"d/m/Y H:i" }}.
+                                    </p>
+                                {% endif %}
+
+                                {% if pedido.estado_devolucion == "aceptada" %}
+                                    <p>
+                                        Seguí las instrucciones de la tienda para devolver los artículos.
+                                        El reembolso todavía no fue registrado.
+                                    </p>
+                                {% endif %}
                             </section>
                         {% endif %}
                     {% endif %}
+                    
+                    <!-- Informa el cierre de la devolución del pedido de esta tienda. -->
+                    {% if pedido.estado_devolucion == "completada" %}
+                        <section>
+                            <h4>Devolución completada</h4>
 
+                            <p>
+                                La tienda registró la recepción el
+                                {{ pedido.fecha_recepcion_devolucion|date:"d/m/Y H:i" }}.
+                            </p>
 
+                            <p><strong>Observaciones de la tienda:</strong></p>
+                            {{ pedido.observaciones_recepcion_devolucion|linebreaks }}
+                        </section>
+                    {% endif %}
+                    
                     {% for detalle in pedido.detalles.all %}
                         <article>
                             <h4>{{ detalle.nombre_producto }}</h4>
