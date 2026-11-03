@@ -142,7 +142,7 @@ def listado_productos(request):
         # Evita presentar resultados que no respeten filtros inválidos.
         productos = catalogo.none()
 
-    paginador = Paginator(productos, 3)
+    paginador = Paginator(productos, 30)
     pagina = paginador.get_page(request.GET.get("pagina"))
 
     # Conserva los filtros y reemplaza solo el número de página.

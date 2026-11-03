@@ -18,7 +18,8 @@ from accounts.models import DomicilioEntrega
 from carrito.models import ItemCarrito
 from carrito.views import motivo_no_disponible
 from catalog.views_publicas import productos_visibles
-
+from .cotizador import cotizar_entrega
+from .mercado_pago import crear_orden_de_prueba, consultar_orden
 
 from .models import Compra, Pedido
 from .services import crear_compra_pendiente, huella_revision, procesar_pago_simulado, cancelar_compra_pendiente, cancelar_pedido_pagado, solicitar_devolucion_pedido
@@ -107,6 +108,21 @@ def revisar_compra(request):
         tiendas_por_id.values(),
         key=lambda tienda: tienda.pk,
     )
+
+        # Calcula una cotización por tienda para mostrarla en la revisión.
+    for tienda in tiendas:
+        tienda.costo_envio_estimado = None
+
+        if domicilio is not None:
+            try:
+                tienda.costo_envio_estimado = cotizar_entrega(
+                    tienda,
+                    domicilio,
+                    es_retiro=False,
+                )
+            except ValueError:
+                # La plantilla avisa si faltan datos para cotizar.
+                pass
 
 
     return render(
@@ -223,46 +239,118 @@ def detalle_compra(request, codigo):
         "pedidos/detalle_compra.html",
         {"compra": compra},
     )
+
+@login_required
 @require_POST
 def pagar_compra(request, codigo):
-    """Procesa una simulación de pago para una compra propia."""
-
-    if not request.user.is_authenticated:
-        return redirect_to_login(
-            reverse("pedidos:detalle", kwargs={"codigo": codigo}),
-            login_url=reverse("accounts:iniciar_sesion"),
-        )
-
+    """Abre el checkout de Mercado Pago de una compra propia y pendiente."""
     try:
-        compra, procesada = procesar_pago_simulado(
-            request.user,
-            codigo,
-            request.POST.get("resultado", ""),
-        )
-    except Compra.DoesNotExist:
-        raise Http404("No se encontró la compra.")
-    except ValidationError as error:
-        for mensaje in error.messages:
-            messages.error(request, mensaje)
+        with transaction.atomic():
+            # Evita que dos clics simultáneos creen dos órdenes locales.
+            compra = get_object_or_404(
+                Compra.objects.select_for_update(),
+                codigo=codigo,
+                comprador=request.user,
+            )
 
+            if compra.estado != Compra.Estado.PENDIENTE:
+                messages.info(request, "Esta compra ya no está pendiente de pago.")
+                return redirect("pedidos:detalle", codigo=codigo)
+
+            if not compra.mp_checkout_url:
+                orden = crear_orden_de_prueba(compra)
+                orden_id = orden.get("id")
+                enlace = orden.get("checkout_url")
+
+                if not orden_id or not enlace:
+                    raise ValueError("La respuesta de Mercado Pago está incompleta.")
+
+                compra.mp_orden_id = orden_id
+                compra.mp_checkout_url = enlace
+                compra.save(update_fields=["mp_orden_id", "mp_checkout_url"])
+
+            enlace = compra.mp_checkout_url
+
+    except (ValueError, ConnectionError):
+        messages.error(
+            request,
+            "No pudimos abrir Mercado Pago. Tu compra sigue pendiente. "
+            "Volvé a intentarlo.",
+        )
         return redirect("pedidos:detalle", codigo=codigo)
 
-    if not procesada:
-        messages.info(
-            request,
-            "Esta compra ya no está pendiente. "
-            "No se realizó ninguna operación adicional.",
-        )
-    elif compra.estado == Compra.Estado.CONFIRMADA:
-        messages.success(
-            request,
-            "Pago simulado aprobado. Tu compra está confirmada "
-            "y sus pedidos están en preparación.",
-        )
-    else:
-        messages.error(request, compra.motivo_rechazo)
+    return redirect(enlace)
 
-    return redirect("pedidos:detalle", codigo=compra.codigo)
+@login_required
+@require_POST
+def verificar_pago(request, codigo):
+    """Verifica el pago de una compra propia antes de descontar stock."""
+    compra = get_object_or_404(Compra, comprador=request.user, codigo=codigo)
+    destino = redirect("pedidos:detalle", codigo=codigo)
+
+    if compra.estado != Compra.Estado.PENDIENTE:
+        messages.info(request, "Esta compra ya fue procesada.")
+        return destino
+
+    try:
+        orden = consultar_orden(compra)
+    except (ValueError, ConnectionError):
+        messages.error(request, "No pudimos consultar el pago. Intentá nuevamente.")
+        return destino
+
+    if (
+        orden.get("id") != compra.mp_orden_id
+        or orden.get("external_reference") != str(compra.codigo)
+    ):
+        messages.error(request, "La orden recibida no corresponde a esta compra.")
+        return destino
+
+    if (orden.get("status"), orden.get("status_detail")) != ("processed", "accredited"):
+        messages.info(request, "Mercado Pago todavía no informa un pago acreditado.")
+        return destino
+
+    # Compara el dinero acreditado con el total de productos y entrega.
+    from decimal import InvalidOperation
+
+    try:
+        pagado = Decimal(str(orden.get("total_paid_amount")))
+        importe_orden = Decimal(str(orden.get("total_amount")))
+    except InvalidOperation:
+        messages.error(request, "No se pudo verificar el importe del pago.")
+        return destino
+
+    if (
+        orden.get("currency") != "ARS"
+        or not pagado.is_finite()
+        or not importe_orden.is_finite()
+        or pagado != compra.total_con_entrega
+        or importe_orden != pagado
+    ):
+        messages.error(request, "La moneda o el importe no coincide. Revisá la operación.")
+        return destino
+
+    with transaction.atomic():
+        # El servicio vuelve a comprobar el stock y evita descontarlo dos veces.
+        compra, modificada = procesar_pago_simulado(request.user, codigo, "aprobado")
+
+        if modificada and compra.estado == Compra.Estado.RECHAZADA:
+            # La compra no se pudo preparar, pero el pago sí fue acreditado.
+            compra.motivo_rechazo = (
+                "Pago acreditado en Mercado Pago. Requiere revisión y eventual "
+                f"reembolso. {compra.motivo_rechazo}"
+            )[:250]
+            compra.save(update_fields=["motivo_rechazo"])
+
+    if compra.estado == Compra.Estado.CONFIRMADA:
+        messages.success(request, "Pago acreditado. Tu compra está confirmada.")
+    else:
+        messages.warning(
+            request,
+            "El pago fue acreditado, pero la compra no pudo confirmarse. "
+            "La operación requiere revisión.",
+        )
+
+    return destino 
 
 @login_required
 @require_GET

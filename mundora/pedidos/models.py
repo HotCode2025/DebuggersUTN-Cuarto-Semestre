@@ -95,6 +95,25 @@ class Compra(models.Model):
         verbose_name_plural = "compras"
         ordering = ["-fecha_creacion", "-pk"]
 
+            # Identifica la orden para consultar su estado en Mercado Pago.
+    mp_orden_id = models.CharField(
+        "ID de la orden de Mercado Pago",
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    # Guarda el enlace que usará el comprador para continuar el pago.
+    mp_checkout_url = models.URLField(
+        "enlace de pago de Mercado Pago",
+        max_length=1000,
+        blank=True,
+        default="",
+        editable=False,
+    )
+
     @property
     def total_productos(self):
         """Suma los importes de los productos, sin incluir envíos."""
@@ -103,6 +122,26 @@ class Compra(models.Model):
             (pedido.subtotal for pedido in self.pedidos.all()),
             Decimal("0.00"),
         )
+
+    @property
+    def total_entregas(self):
+        """Suma la entrega de cada tienda si todos los costos están registrados."""
+        total = Decimal("0.00")
+
+        for pedido in self.pedidos.all():
+            if pedido.costo_entrega is None:
+                return None
+            total += pedido.costo_entrega
+
+        return total
+
+    @property
+    def total_con_entrega(self):
+        """Suma los productos y las entregas de la compra."""
+        entregas = self.total_entregas
+        if entregas is None:
+            return None
+        return self.total_productos + entregas
 
     def __str__(self):
         """Identifica la compra mediante su código público."""
@@ -129,6 +168,16 @@ class Pedido(models.Model):
 
         ENVIO = "envio", "Envío a domicilio"
         RETIRO = "retiro", "Retiro en tienda"
+
+        # Conserva el costo de entrega acordado al crear el pedido.
+    costo_entrega = models.DecimalField(
+        "costo de entrega en pesos argentinos",
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        editable=False,
+    )
 
     class EstadoDevolucion(models.TextChoices):
         """Define el avance de la devolución del pedido completo."""

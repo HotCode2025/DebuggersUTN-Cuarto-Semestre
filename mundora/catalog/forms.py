@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 
-from .models import Producto, Tienda
+from .models import Producto, Tienda, normalizar_medidas
 
 class FormularioProducto(forms.ModelForm):
     """Valida la publicación y la revisión administrativa."""
@@ -107,10 +107,11 @@ class ConjuntoVariantesProducto(BaseInlineFormSet):
         for formulario in formularios_validos:
             datos = formulario.cleaned_data
 
-            # Compara características sin modificar el texto guardado.
-            combinacion = tuple(
-                self.normalizar_texto(datos.get(campo))
-                for campo in ("color", "medidas", "material")
+            # Compara las variantes usando un formato común para las medidas.
+            combinacion = (
+                self.normalizar_texto(datos.get("color")),
+                self.normalizar_texto(normalizar_medidas(datos.get("medidas") or "")),
+                self.normalizar_texto(datos.get("material")),
             )
 
             if combinacion in combinaciones:

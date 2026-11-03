@@ -12,6 +12,7 @@ from catalog.models import Variante
 from catalog.views_publicas import productos_visibles
 from decimal import Decimal
 
+from .cotizador import cotizar_entrega
 from .models import Compra, DetallePedido, Pedido
 
 
@@ -218,7 +219,7 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada,modalidades):
             "Revisá los datos actualizados antes de continuar."
         )
 
-        # Exige una elección válida para cada tienda del carrito.
+    # Exige una elección válida para cada tienda del carrito.
     ids_tiendas = {
         str(item.variante.producto.tienda_id)
         for item in items
@@ -245,11 +246,28 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada,modalidades):
             "Una modalidad de entrega no es válida. Revisá la compra."
         )
 
+    # Calcula una sola cotización por tienda con los datos del servidor.
+    costos_por_tienda = {}
+    for item in items:
+        tienda = item.variante.producto.tienda
+        clave = str(tienda.pk)
+        if clave in costos_por_tienda:
+            continue
+        try:
+            costos_por_tienda[clave] = cotizar_entrega(
+                tienda,
+                domicilio,
+                es_retiro=modalidades[clave] == Pedido.ModalidadEntrega.RETIRO,
+            )
+        except ValueError as error:
+            raise ValidationError(f"{tienda.nombre}: {error}") from error
+
     # Distingue compras con los mismos artículos y distinta entrega.
     contenido_entrega = json.dumps(
         {
             "revision": huella_actual,
             "modalidades": modalidades,
+            "costos": {k: str(v) for k, v in costos_por_tienda.items()},
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -308,6 +326,7 @@ def crear_compra_pendiente(usuario, codigo, huella_esperada,modalidades):
                 tienda=tienda,
                 nombre_tienda=tienda.nombre,
                 modalidad_entrega=modalidad,
+                costo_entrega=costos_por_tienda[str(tienda.pk)],
                 direccion_retiro=(
                     direccion_retiro_tienda(tienda)
                     if modalidad == Pedido.ModalidadEntrega.RETIRO

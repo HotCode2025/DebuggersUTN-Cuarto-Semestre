@@ -163,7 +163,16 @@
                     {% for tienda in tiendas %}
                         <fieldset>
                             <legend>{{ tienda.nombre }}</legend>
-
+                               {% if tienda.costo_envio_estimado != None %}
+                                <p>
+                                    Envío a domicilio:
+                                    <strong>ARS {{ tienda.costo_envio_estimado|floatformat:"2g" }}</strong>
+                                    (estimado).
+                                </p>
+                            {% else %}
+                                <p>No pudimos cotizar el envío. Revisá la provincia y el código postal.</p>
+                            {% endif %}
+                            <p>Retiro en tienda: <strong>sin cargo</strong>.</p> 
                             <p>
                                 <label for="entrega-{{ tienda.pk }}">
                                     Modalidad de entrega

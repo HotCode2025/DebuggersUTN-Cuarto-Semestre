@@ -65,4 +65,9 @@ urlpatterns = [
         views.solicitar_devolucion,
         name="solicitar_devolucion",
     ),
+    path(
+    "<uuid:codigo>/verificar-pago/",
+    views.verificar_pago,
+    name="verificar_pago",
+),
 ]

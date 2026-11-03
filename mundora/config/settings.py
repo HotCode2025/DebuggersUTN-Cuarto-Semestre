@@ -4,7 +4,11 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 load_dotenv(BASE_DIR / ".env")
+
+# Lee la credencial de prueba de Mercado Pago.
+MP_ACCESS_TOKEN_PRUEBA = os.getenv("MP_ACCESS_TOKEN_PRUEBA", "")
 
 
 # Quick-start development settings - unsuitable for production

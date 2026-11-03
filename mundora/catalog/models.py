@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -5,6 +7,21 @@ from decimal import Decimal
 from django.db import models
 
 from django.core.validators import MinValueValidator
+
+def normalizar_medidas(valor):
+    """Unifica los espacios y las unidades de longitud de una variante."""
+    texto = " ".join((valor or "").split())
+
+    # 150cm, 150 CM y 150 cm → 150 cm.
+    texto = re.sub(
+        r"(?<=\d)\s*(mm|cm|m)\b",
+        lambda coincidencia: " " + coincidencia.group(1).lower(),
+        texto,
+        flags=re.IGNORECASE,
+    )
+
+    # 30x30x50 cm y 30 × 30 × 50 cm → 30 × 30 × 50 cm.
+    return re.sub(r"(?<=\d)\s*[xX×]\s*(?=\d)", " × ", texto)
 
 class Tienda(models.Model):
     """Representa el comercio de un usuario vendedor."""
@@ -285,18 +302,28 @@ class Variante(models.Model):
         ordering = ["pk"]
 
         constraints = [
-            # Evita repetir una misma combinación dentro del producto.
             models.UniqueConstraint(
                 fields=["producto", "color", "medidas", "material"],
                 name="variante_combinacion_unica",
             ),
-            # Impide guardar precios iguales o menores que cero.
             models.CheckConstraint(
                 condition=models.Q(precio__gte=Decimal("0.01")),
                 name="variante_precio_positivo",
             ),
         ]
 
+    def clean(self):
+        """Normaliza las medidas antes de validar la combinación."""
+        super().clean()
+        self.medidas = normalizar_medidas(self.medidas)
+
+        if len(self.medidas) > self._meta.get_field("medidas").max_length:
+            raise ValidationError({
+                "medidas": "Las medidas deben ocupar hasta 100 caracteres.",
+            })
+
+
+    
     def __str__(self):
         """Describe la combinación o la identifica como estándar."""
 

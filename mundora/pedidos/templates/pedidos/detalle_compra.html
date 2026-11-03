@@ -300,51 +300,43 @@
                 </section>
             {% endfor %}
 
-            <p>Total de productos</p>
+            <h3>Resumen de la compra</h3>
 
-            <p class="carrito-total">
-                ARS {{ compra.total_productos|floatformat:"2g" }}
-            </p>
+            <p>Productos: ARS {{ compra.total_productos|floatformat:"2g" }}</p>
 
-            <p class="detalle-aclaracion">
-                Importe en pesos argentinos. No incluye costos de envío.
-            </p>
+            {% with entregas=compra.total_entregas %}
+                {% if entregas == None %}
+                    <p>El costo de entrega no quedó registrado en esta compra.</p>
+                {% else %}
+                    <p>Entrega: ARS {{ entregas|floatformat:"2g" }}</p>
+                    <p class="carrito-total">
+                        {% if compra.estado == "pendiente" %}Total a pagar{% else %}Total de la compra{% endif %}:
+                        ARS {{ compra.total_con_entrega|floatformat:"2g" }}
+                    </p>
+                {% endif %}
+            {% endwith %}
         </section>
     </div>
         <!-- Permite probar el pago sin utilizar dinero ni tarjetas reales. -->
     {% if compra.estado == "pendiente" %}
         <section class="compra-bloque">
-            <h2>Pago simulado</h2>
+            <h2>Pago con Mercado Pago</h2>
+            <p>Estás en el entorno de pruebas. No se realizan cobros reales.</p>
 
-            <p>
-                Entorno de pruebas: no se realizan cobros reales.
-                Al aprobar, verificaremos nuevamente la disponibilidad
-                de todos los artículos.
-            </p>
-
-            <form
-                method="post"
-                action="{% url 'pedidos:pagar' compra.codigo %}"
-                class="compra-acciones"
-            >
+            <form method="post" action="{% url 'pedidos:pagar' compra.codigo %}"
+                class="compra-acciones">
                 {% csrf_token %}
-
-                <button
-                    type="submit"
-                    name="resultado"
-                    value="aprobado"
-                >
-                    Simular pago aprobado
-                </button>
-
-                <button
-                    type="submit"
-                    name="resultado"
-                    value="rechazado"
-                >
-                    Simular pago rechazado
-                </button>
+                <button type="submit">Pagar con Mercado Pago</button>
             </form>
+            {% if compra.mp_orden_id %}
+            <form method="post"
+                action="{% url 'pedidos:verificar_pago' compra.codigo %}"
+                class="compra-acciones">
+             {% csrf_token %}
+        <button type="submit">Verificar pago</button>
+    </form>
+{% endif %}
+
         </section>
 
     {% elif compra.estado == "confirmada" %}
