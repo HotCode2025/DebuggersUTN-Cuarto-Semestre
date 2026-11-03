@@ -3,6 +3,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from django.conf import settings
+from django.urls import reverse
 
 from .models import Compra
 
@@ -23,12 +24,27 @@ def crear_orden_de_prueba(compra):
     importe = f"{total:.2f}"
     codigo = str(compra.codigo)
 
+    # El comprador vuelve al detalle protegido de la misma compra.
+    dominio = settings.NGROK_HOST
+    if not dominio:
+        raise ValueError("Falta NGROK_HOST para configurar el retorno.")
+    ruta = reverse("pedidos:detalle", kwargs={"codigo": compra.codigo})
+    retorno = f"https://{dominio}{ruta}"
+
     # En esta primera prueba enviamos la compra completa como un único ítem.
     datos = {
         "type": "online",
         "processing_mode": "manual",
         "external_reference": codigo,
         "total_amount": importe,
+        "config": {
+            "online": {
+                "success_url": retorno,
+                "failure_url": retorno,
+                "pending_url": retorno,
+                "auto_return": "all",
+            }
+        },
         "items": [
             {
                 "title": f"Compra MUNDORA #{compra.pk} con entrega incluida",

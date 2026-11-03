@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-
+from .webhooks import webhook_mercado_pago
 
 # Identifica las rutas del proceso de compra.
 app_name = "pedidos"
@@ -70,4 +70,5 @@ urlpatterns = [
     views.verificar_pago,
     name="verificar_pago",
 ),
+    path("mercado-pago/webhook/", webhook_mercado_pago, name="webhook_mercado_pago"),
 ]

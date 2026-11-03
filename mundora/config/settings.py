@@ -9,6 +9,7 @@ load_dotenv(BASE_DIR / ".env")
 
 # Lee la credencial de prueba de Mercado Pago.
 MP_ACCESS_TOKEN_PRUEBA = os.getenv("MP_ACCESS_TOKEN_PRUEBA", "")
+MP_WEBHOOK_SECRETO_PRUEBA = os.getenv("MP_WEBHOOK_SECRETO_PRUEBA", "").strip()
 
 
 # Quick-start development settings - unsuitable for production
@@ -21,6 +22,15 @@ SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = ["localhost","127.0.0.1"]
+# Dominio público de la tienda durante las pruebas con ngrok.
+NGROK_HOST = os.getenv("NGROK_HOST", "").strip()
+
+if NGROK_HOST:
+    ALLOWED_HOSTS.append(NGROK_HOST)
+    CSRF_TRUSTED_ORIGINS = [
+        *globals().get("CSRF_TRUSTED_ORIGINS", []),
+        f"https://{NGROK_HOST}",
+    ]
 
 
 # Application definition

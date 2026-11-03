@@ -24,7 +24,7 @@ from .mercado_pago import crear_orden_de_prueba, consultar_orden
 from .models import Compra, Pedido
 from .services import crear_compra_pendiente, huella_revision, procesar_pago_simulado, cancelar_compra_pendiente, cancelar_pedido_pagado, solicitar_devolucion_pedido
 from .forms import FormularioSolicitudDevolucion
-
+from .verificacion import verificar_pago_de_compra
 
 @login_required
 @require_GET
@@ -284,73 +284,24 @@ def pagar_compra(request, codigo):
 @login_required
 @require_POST
 def verificar_pago(request, codigo):
-    """Verifica el pago de una compra propia antes de descontar stock."""
+    """Permite al comprador verificar el pago desde el detalle."""
     compra = get_object_or_404(Compra, comprador=request.user, codigo=codigo)
-    destino = redirect("pedidos:detalle", codigo=codigo)
-
-    if compra.estado != Compra.Estado.PENDIENTE:
-        messages.info(request, "Esta compra ya fue procesada.")
-        return destino
 
     try:
-        orden = consultar_orden(compra)
+        resultado = verificar_pago_de_compra(compra)
     except (ValueError, ConnectionError):
         messages.error(request, "No pudimos consultar el pago. Intentá nuevamente.")
-        return destino
-
-    if (
-        orden.get("id") != compra.mp_orden_id
-        or orden.get("external_reference") != str(compra.codigo)
-    ):
-        messages.error(request, "La orden recibida no corresponde a esta compra.")
-        return destino
-
-    if (orden.get("status"), orden.get("status_detail")) != ("processed", "accredited"):
-        messages.info(request, "Mercado Pago todavía no informa un pago acreditado.")
-        return destino
-
-    # Compara el dinero acreditado con el total de productos y entrega.
-    from decimal import InvalidOperation
-
-    try:
-        pagado = Decimal(str(orden.get("total_paid_amount")))
-        importe_orden = Decimal(str(orden.get("total_amount")))
-    except InvalidOperation:
-        messages.error(request, "No se pudo verificar el importe del pago.")
-        return destino
-
-    if (
-        orden.get("currency") != "ARS"
-        or not pagado.is_finite()
-        or not importe_orden.is_finite()
-        or pagado != compra.total_con_entrega
-        or importe_orden != pagado
-    ):
-        messages.error(request, "La moneda o el importe no coincide. Revisá la operación.")
-        return destino
-
-    with transaction.atomic():
-        # El servicio vuelve a comprobar el stock y evita descontarlo dos veces.
-        compra, modificada = procesar_pago_simulado(request.user, codigo, "aprobado")
-
-        if modificada and compra.estado == Compra.Estado.RECHAZADA:
-            # La compra no se pudo preparar, pero el pago sí fue acreditado.
-            compra.motivo_rechazo = (
-                "Pago acreditado en Mercado Pago. Requiere revisión y eventual "
-                f"reembolso. {compra.motivo_rechazo}"
-            )[:250]
-            compra.save(update_fields=["motivo_rechazo"])
-
-    if compra.estado == Compra.Estado.CONFIRMADA:
-        messages.success(request, "Pago acreditado. Tu compra está confirmada.")
     else:
-        messages.warning(
-            request,
-            "El pago fue acreditado, pero la compra no pudo confirmarse. "
-            "La operación requiere revisión.",
-        )
+        if resultado == "confirmada":
+            messages.success(request, "Pago acreditado. Tu compra está confirmada.")
+        elif resultado == "sin_acreditar":
+            messages.info(request, "Mercado Pago no informa un pago acreditado.")
+        elif resultado == "datos_incorrectos":
+            messages.warning(request, "Los datos del pago no coinciden con la compra.")
+        else:
+            messages.warning(request, "El pago fue acreditado y requiere revisión.")
 
-    return destino 
+    return redirect("pedidos:detalle", codigo=codigo)
 
 @login_required
 @require_GET
