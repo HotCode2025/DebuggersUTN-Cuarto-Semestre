@@ -1,49 +1,33 @@
-<!DOCTYPE html>
-<html lang="es-AR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión | MUNDORA</title>
-</head>
-<body>
-    <main>
-        <h1>Ingresá a MUNDORA</h1>
+{% extends "catalog/publico/base.html" %}
 
-        <!-- Muestra la confirmación después del registro. -->
-        {% if messages %}
-            <div role="status">
-                {% for mensaje in messages %}
-                    <p>{{ mensaje }}</p>
-                {% endfor %}
+{% block titulo %}Iniciar sesión | MUNDORA{% endblock %}
+
+{% block contenido %}
+<section class="acceso-cuenta" aria-labelledby="titulo-acceso">
+    <h1 id="titulo-acceso">Ingresá a MUNDORA</h1>
+    <p>Usá tu usuario o correo electrónico y tu contraseña.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for campo in form.hidden_fields %}
+            {{ campo }}{{ campo.errors }}
+        {% endfor %}
+        {% for campo in form.visible_fields %}
+            <div class="acceso-campo">
+                {{ campo.label_tag }}
+                {{ campo }}
+                {{ campo.errors }}
             </div>
+        {% endfor %}
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
         {% endif %}
+        <button type="submit">Iniciar sesión</button>
+    </form>
 
-        <!-- Solicita las credenciales para iniciar sesión. -->
-        <form method="post">
-            {% csrf_token %}
-
-            {{ form.non_field_errors }}
-
-            {% for campo in form %}
-                <p>
-                    {{ campo.label_tag }}
-                    {{ campo }}
-                    {{ campo.errors }}
-                </p>
-            {% endfor %}
-
-            <!-- Conserva el destino de una página protegida. -->
-            {% if next %}
-                <input type="hidden" name="next" value="{{ next }}">
-            {% endif %}
-
-            <button type="submit">Iniciar sesión</button>
-        </form>
-
-        <p>
-            ¿Todavía no tenés cuenta?
-            <a href="{% url 'accounts:registro' %}">Registrate</a>
-        </p>
-    </main>
-</body>
-</html>
+    <p class="acceso-registro">
+        ¿Todavía no tenés cuenta? <a href="{% url 'accounts:registro' %}">Registrate</a>
+    </p>
+</section>
+{% endblock %}

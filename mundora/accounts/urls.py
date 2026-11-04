@@ -2,7 +2,8 @@ from django.urls import path
 from django.contrib.auth.views import LogoutView
 
 from . import views
-
+from .baja import eliminar_cuenta
+from .perfil import editar_perfil
 
 # Identifica las rutas de la aplicación de cuentas.
 app_name = "accounts"
@@ -32,4 +33,6 @@ urlpatterns = [
         views.mi_domicilio,
         name="mi_domicilio",
     ),
+    path("mi-cuenta/eliminar/", eliminar_cuenta, name="eliminar_cuenta"),
+    path("mi-cuenta/editar/", editar_perfil, name="editar_perfil"),
 ]

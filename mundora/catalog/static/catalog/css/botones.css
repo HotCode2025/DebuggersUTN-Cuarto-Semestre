@@ -1,0 +1,49 @@
+/* Solo acciones dentro de las páginas. El encabezado usa navegacion.css. */
+.contenido :is(button, input[type="submit"], input[type="button"], input[type="reset"], a.boton, .compra-acciones a, .detalle-enlace) {
+    --btn-fondo: #245c46;
+    --btn-tinta: white;
+    --btn-borde: #245c46;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    max-width: 100%;
+    width: auto;
+    padding: .62rem 1.05rem;
+    border: 1px solid var(--btn-borde);
+    border-radius: .7rem;
+    background: var(--btn-fondo);
+    color: var(--btn-tinta);
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+.contenido :is(.boton.boton-secundario, button.boton-secundario, .compra-acciones a:not(.boton), input[type="reset"]) {
+    --btn-fondo: var(--fondo);
+    --btn-tinta: var(--enlace);
+    --btn-borde: var(--enlace);
+}
+.contenido :is(.boton.boton-peligro, button.boton-peligro, .carrito-quitar button) {
+    --btn-fondo: var(--fondo);
+    --btn-tinta: var(--error);
+    --btn-borde: var(--error);
+}
+.contenido button.boton-peligro-firme {
+    --btn-fondo: #932b27;
+    --btn-tinta: white;
+    --btn-borde: #932b27;
+}
+.contenido :is(button, input[type="submit"], input[type="button"], input[type="reset"], a.boton, .compra-acciones a, .detalle-enlace):hover {
+    background: var(--btn-fondo);
+    color: var(--btn-tinta);
+    box-shadow: inset 0 0 0 1px currentColor;
+}
+.contenido :is(button,input[type="submit"],input[type="button"],input[type="reset"]):disabled {
+    opacity: .55; cursor: not-allowed; box-shadow: none;
+}
+.cuenta-acciones { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; align-items: center; }
+.cuenta-acciones form { margin: 0; }

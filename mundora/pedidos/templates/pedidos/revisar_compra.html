@@ -14,7 +14,7 @@
     {% if errores %}
         <!-- Detiene el proceso si falta información o disponibilidad. -->
         <section class="compra-bloque" aria-labelledby="titulo-problemas">
-            <h2 id="titulo-problemas">Necesitamos revisar algunos datos</h2>
+            <h2 id="titulo-problemas">Antes de continuar</h2>
 
             <ul class="errorlist">
                 {% for error in errores %}
@@ -39,174 +39,45 @@
         </section>
     {% else %}
         <div class="compra-revision">
-            <!-- Muestra el domicilio habitual que se propone para la entrega. -->
-            <section
-                class="compra-bloque"
-                aria-labelledby="titulo-entrega"
-            >
-                <h2 id="titulo-entrega">Domicilio de entrega</h2>
-                
-                    <p>
-                        Este domicilio se utilizará para las tiendas
-                        en las que elijas envío a domicilio.
-                    </p>
-
-                <dl class="detalle-datos">
-                    <dt>Recibe</dt>
-                    <dd>{{ domicilio.destinatario }}</dd>
-
-                    <dt>Teléfono de contacto</dt>
-                    <dd>{{ domicilio.telefono_contacto }}</dd>
-
-                    <dt>Dirección</dt>
-                    <dd>{{ domicilio.calle }} {{ domicilio.numero }}</dd>
-
-                    {% if domicilio.detalle_direccion %}
-                        <dt>Piso, departamento o referencias</dt>
-                        <dd>{{ domicilio.detalle_direccion }}</dd>
-                    {% endif %}
-
-                    <dt>Localidad y provincia</dt>
-                    <dd>
-                        {{ domicilio.localidad }},
-                        {{ domicilio.provincia }}
-                    </dd>
-
-                    <dt>Código postal</dt>
-                    <dd>{{ domicilio.codigo_postal }}</dd>
-                </dl>
-
-                <a href="{% url 'accounts:mi_domicilio' %}">
-                    Modificar mi domicilio
-                </a>
+            <section class="compra-bloque">
+                <h2>Tus productos</h2>
+                {% for item in items %}
+<article class="compra-producto"><h3>{{ item.variante.producto.nombre }}</h3>
+    <p>{{ item.variante.producto.tienda.nombre }}</p>
+    {% if item.variante.producto.estado_revision != "aprobado" %}<p class="etiqueta etiqueta-pendiente">Publicación sin verificar</p>{% endif %}
+    <p class="detalle-aclaracion">{% if item.variante.color %}<span>Color: {{ item.variante.color }}</span> {% endif %} {% if item.variante.medidas %}<span>Medidas: {{ item.variante.medidas }}</span> {% endif %} {% if item.variante.material %}<span>Material: {{ item.variante.material }}</span> {% endif %}</p>
+    <p>{{ item.cantidad }} × ARS {{ item.variante.precio|floatformat:"2g" }} · <strong>ARS {{ item.subtotal|floatformat:"2g" }}</strong></p>
+</article>
+                {% endfor %}
+                <p><strong>Productos: ARS {{ total_productos|floatformat:"2g" }}</strong></p>
             </section>
-
-            <!-- Resume los importes actuales de los productos seleccionados. -->
-            <section
-                class="compra-bloque"
-                aria-labelledby="titulo-productos"
-            >
-                <h2 id="titulo-productos">Productos de tu compra</h2>
-
-                <div class="compra-productos">
-                    {% for item in items %}
-                        <article class="compra-producto">
-                            <h3>{{ item.variante.producto.nombre }}</h3>
-
-                            <p>
-                                Tienda:
-                                {{ item.variante.producto.tienda.nombre }}
-                            </p>
-
-                            {% if item.variante.producto.estado_revision != "aprobado" %}
-                                <p class="etiqueta etiqueta-pendiente">
-                                    En revisión · Publicación no verificada
-                                </p>
-                            {% endif %}
-
-                            <dl class="detalle-datos">
-                                <dt>Color</dt>
-                                <dd>{{ item.variante.color|default:"Sin especificar" }}</dd>
-
-                                <dt>Medidas</dt>
-                                <dd>{{ item.variante.medidas|default:"Sin especificar" }}</dd>
-
-                                <dt>Material</dt>
-                                <dd>{{ item.variante.material|default:"Sin especificar" }}</dd>
-                            </dl>
-
-                            <p>Cantidad: {{ item.cantidad }}</p>
-
-                            <p>
-                                Precio unitario:
-                                ARS {{ item.variante.precio|floatformat:"2g" }}
-                            </p>
-
-                            <p class="precio">
-                                Subtotal:
-                                ARS {{ item.subtotal|floatformat:"2g" }}
-                            </p>
-                        </article>
-                    {% endfor %}
-                </div>
-
-                <div class="compra-importe">
-                    <p>Total de productos</p>
-
-                    <p class="carrito-total">
-                        ARS {{ total_productos|floatformat:"2g" }}
-                    </p>
-
-                    <p class="detalle-aclaracion">
-                        Importe en pesos argentinos.
-                        No incluye costos de envío.
-                    </p>
-                </div>
-
-                <p>
-                    Los productos no quedan reservados.
-                    Verificaremos nuevamente la disponibilidad al
-                    confirmar el pago.
-                </p>
-                <!-- Registra la selección revisada sin efectuar un cobro. -->
-                <form method="post" action="{% url 'pedidos:crear' %}">
+            <section class="compra-bloque">
+                <h2>¿Envío o retiro?</h2>
+                <details>
+                    <summary>Tu domicilio para los envíos</summary>
+                    <p>{{ domicilio.calle }} {{ domicilio.numero }}{% if domicilio.detalle_direccion %}, {{ domicilio.detalle_direccion }}{% endif %}<br>{{ domicilio.localidad }}, {{ domicilio.provincia }} (CP {{ domicilio.codigo_postal }})<br>{{ domicilio.destinatario }} · {{ domicilio.telefono_contacto }}</p>
+                    <a href="{% url 'accounts:mi_domicilio' %}">Cambiar domicilio</a>
+                </details>
+                <form class="formulario-domicilio" method="post" action="{% url 'pedidos:crear' %}">
                     {% csrf_token %}
-
-                    <input
-                        type="hidden"
-                        name="token_revision"
-                        value="{{ token_revision }}"
-                    >
-
-                    <h3>¿Cómo querés recibir tus productos?</h3>
-
+                    <input type="hidden" name="token_revision" value="{{ token_revision }}">
                     {% for tienda in tiendas %}
-                        <fieldset>
+                        <fieldset class="detalle-variante">
                             <legend>{{ tienda.nombre }}</legend>
-                               {% if tienda.costo_envio_estimado != None %}
-                                <p>
-                                    Envío a domicilio:
-                                    <strong>ARS {{ tienda.costo_envio_estimado|floatformat:"2g" }}</strong>
-                                    (estimado).
-                                </p>
-                            {% else %}
-                                <p>No pudimos cotizar el envío. Revisá la provincia y el código postal.</p>
-                            {% endif %}
-                            <p>Retiro en tienda: <strong>sin cargo</strong>.</p> 
-                            <p>
-                                <label for="entrega-{{ tienda.pk }}">
-                                    Modalidad de entrega
-                                </label>
-
-                                <select
-                                    id="entrega-{{ tienda.pk }}"
-                                    name="entrega_{{ tienda.pk }}"
-                                    required
-                                >
-                                    <option value="envio">Envío a domicilio</option>
-                                    <option value="retiro">Retiro en tienda</option>
-                                </select>
-                            </p>
-
-                            <p>
-                                <strong>Dirección para retirar:</strong>
-                                {{ tienda.calle }} {{ tienda.numero }},
-                                {{ tienda.localidad }},
-                                {{ tienda.provincia }}.
-                                CP {{ tienda.codigo_postal }}.
-                                {% if tienda.detalle_direccion %}
-                                    {{ tienda.detalle_direccion }}
-                                {% endif %}
-                            </p>
-
-                            <p>
-                                Si elegís retiro, esperá a que el vendedor indique
-                                que el pedido está listo antes de ir.
-                            </p>
+                            <label for="entrega-{{ tienda.pk }}">Forma de entrega</label>
+                            <select id="entrega-{{ tienda.pk }}" name="entrega_{{ tienda.pk }}" required>
+                                <option value="envio">Envío a domicilio{% if tienda.costo_envio_estimado != None %} · ARS {{ tienda.costo_envio_estimado|floatformat:"2g" }} estimados{% endif %}</option>
+                                <option value="retiro">Retiro en tienda · sin cargo</option>
+                            </select>
+                            {% if tienda.costo_envio_estimado == None %}<p class="carrito-aviso">No pudimos cotizar el envío. Revisá la provincia y el código postal.</p>{% endif %}
+                            <details><summary>Dónde retirar</summary>
+                                <p>{{ tienda.calle }} {{ tienda.numero }}{% if tienda.detalle_direccion %}, {{ tienda.detalle_direccion }}{% endif %}<br>{{ tienda.localidad }}, {{ tienda.provincia }} (CP {{ tienda.codigo_postal }})</p>
+                                <p>Esperá el aviso de la tienda antes de ir.</p>
+                            </details>
                         </fieldset>
                     {% endfor %}
-
-                    <button type="submit">Crear compra pendiente</button>
+                    <p>En el próximo paso vas a ver el total con la entrega. El stock se confirma al pagar.</p>
+                    <button type="submit">Continuar al pago</button>
                 </form>
             </section>
         </div>

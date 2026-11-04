@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,6 +11,7 @@ urlpatterns = [
     path("catalogo/", include ("catalog.urls_publicas")),
     path("carrito/", include("carrito.urls")),
     path("compras/", include("pedidos.urls")),
+    path("", RedirectView.as_view(pattern_name="catalogo:listado", permanent=False)),
 ]
 
 # Sirve los archivos cargados mientras trabajamos en modo desarrollo.

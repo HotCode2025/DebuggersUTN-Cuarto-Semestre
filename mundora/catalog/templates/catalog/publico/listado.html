@@ -37,11 +37,6 @@
 
 {% if not formulario.errors %}
     <p>Productos encontrados: {{ pagina.paginator.count }}</p>
-    <p>
-        El precio «Desde» y la disponibilidad corresponden a
-        las variantes que coinciden con los filtros.
-        En el detalle podés consultar todas las opciones activas.
-    </p>
 {% endif %}
     <!-- Presenta los productos habilitados para los compradores. -->
     <section aria-label="Productos">

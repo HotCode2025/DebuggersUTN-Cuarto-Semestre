@@ -1,59 +1,51 @@
 {% extends "catalog/publico/base.html" %}
-
-{% block titulo %}Detalle de compra | MUNDORA{% endblock %}
-
+{% block titulo %}Compra #{{ compra.pk }} | MUNDORA{% endblock %}
 {% block contenido %}
-    <p>
-        <a href="{% url 'carrito:detalle' %}">← Volver al carrito</a>
-    </p>
-    <p>
-        <a href="{% url 'pedidos:mis_compras' %}">
-            Ver mis compras
-        </a>
-    </p>   
-    <h1>Detalle de tu compra</h1>
-
-    <p>Código: {{ compra.codigo }}</p>
-    <p><strong>Estado: {{ compra.get_estado_display }}</strong></p>
-    <p>Creada el {{ compra.fecha_creacion|date:"d/m/Y H:i" }}</p>
-
-    {% if compra.estado == "pendiente" %}
-        <p class="carrito-aviso">
-            Esta compra está pendiente de pago.
-            No se realizó ningún cargo ni se reservaron unidades.
-        </p>
-    {% endif %}
-
-    {% if compra.motivo_rechazo %}
-        <p class="carrito-aviso">{{ compra.motivo_rechazo }}</p>
-    {% endif %}
-
+    <nav class="compra-acciones" aria-label="Volver"><a href="{% url 'pedidos:mis_compras' %}">← Mis compras</a><a href="{% url 'carrito:detalle' %}">Mi carrito</a></nav>
+    <h1>Compra #{{ compra.pk }}</h1>
+    <p><strong>{% if compra.estado == "pendiente" %}Pendiente de pago{% else %}{{ compra.get_estado_display }}{% endif %}</strong> · {{ compra.fecha_creacion|date:"d/m/Y H:i" }}</p>
+    {% if compra.motivo_rechazo %}<p class="carrito-aviso">{{ compra.motivo_rechazo }}</p>{% endif %}
     <div class="compra-revision">
-        <!-- Muestra la copia de la dirección guardada en esta compra. -->
         <section class="compra-bloque">
-            <h2>Datos de entrega</h2>
+            <h2>Resumen</h2>
+            <p>Productos: ARS {{ compra.total_productos|floatformat:"2g" }}</p>
 
-            <p>
-                Este domicilio corresponde a los pedidos con envío.
-                Los pedidos con retiro muestran su dirección junto a cada tienda.
-            </p>
+            {% with entregas=compra.total_entregas %}
+                {% if entregas == None %}
+                    <p>El costo de entrega no quedó registrado en esta compra.</p>
+                {% else %}
+                    <p>Entrega: ARS {{ entregas|floatformat:"2g" }}</p>
+                    <p class="carrito-total">
+                        {% if compra.estado == "pendiente" %}Total a pagar{% else %}Total de la compra{% endif %}:
+                        ARS {{ compra.total_con_entrega|floatformat:"2g" }}
+                    </p>
+                {% endif %}
+            {% endwith %}
 
-            <p><strong>{{ compra.destinatario }}</strong></p>
-            <p>{{ compra.telefono_contacto }}</p>
-            <p>{{ compra.calle }} {{ compra.numero }}</p>
-
-            {% if compra.detalle_direccion %}
-                <p>{{ compra.detalle_direccion }}</p>
+            {% if compra.estado == "pendiente" %}
+                <p class="detalle-aclaracion">Pago de prueba. No se cobra dinero real.</p>
+<form method="post" action="{% url 'pedidos:pagar' compra.codigo %}"
+                class="compra-acciones">
+                {% csrf_token %}
+                <button type="submit">Pagar con Mercado Pago</button>
+            </form>
+            {% if compra.mp_orden_id %}
+            <form method="post"
+                action="{% url 'pedidos:verificar_pago' compra.codigo %}"
+                class="compra-acciones">
+             {% csrf_token %}
+        <button type="submit">Verificar pago</button>
+    </form>
+{% endif %}
+            {% elif compra.estado == "confirmada" %}
+                <p>Pago acreditado{% if compra.fecha_confirmacion %} el {{ compra.fecha_confirmacion|date:"d/m/Y H:i" }}{% endif %}.</p>
+            {% elif compra.estado == "rechazada" or compra.estado == "cancelada" %}
+                <p><a href="{% url 'carrito:detalle' %}">Volver a comprar desde el carrito</a></p>
             {% endif %}
-
-            <p>{{ compra.localidad }}, {{ compra.provincia }}</p>
-            <p>Código postal: {{ compra.codigo_postal }}</p>
+            <details><summary>Código de compra</summary><p style="overflow-wrap:anywhere">{{ compra.codigo }}</p></details>
         </section>
-
-        <!-- Agrupa las copias de los productos según su tienda. -->
         <section class="compra-bloque">
-            <h2>Pedidos de esta compra</h2>
-
+            <h2>Pedidos por tienda</h2>
             {% for pedido in compra.pedidos.all %}
                 <section class="compra-producto">
                     <h3>{{ pedido.nombre_tienda }}</h3>
@@ -63,10 +55,7 @@
                         {{ pedido.get_estado_display }}
                     </p>
 
-                                        <p>
-                        <strong>Modalidad:</strong>
-                        {{ pedido.get_modalidad_entrega_display }}
-                    </p>
+                                        {% if pedido.modalidad_entrega == "envio" %}<h4>Envío a domicilio</h4><p>{{ compra.calle }} {{ compra.numero }}{% if compra.detalle_direccion %}, {{ compra.detalle_direccion }}{% endif %}<br>{{ compra.localidad }}, {{ compra.provincia }} (CP {{ compra.codigo_postal }})<br>{{ compra.destinatario }} · {{ compra.telefono_contacto }}</p>{% endif %}
 
                     <!-- Diferencia el retiro del seguimiento de un envío. -->
                     {% if pedido.modalidad_entrega == "retiro" %}
@@ -74,12 +63,7 @@
                             <h4>Retiro en tienda</h4>
                             <p>{{ pedido.direccion_retiro }}</p>
 
-                            {% if pedido.estado == "pendiente" %}
-                                <p>
-                                    El retiro se preparará después
-                                    de confirmar el pago.
-                                </p>
-                            {% elif pedido.estado == "preparacion" %}
+                            {% if pedido.estado == "preparacion" %}
                                 <p>
                                     La tienda está preparando tus artículos.
                                     Esperá a que indique que están listos.
@@ -262,35 +246,11 @@
                     {% endif %}
                     
                     {% for detalle in pedido.detalles.all %}
-                        <article>
-                            <h4>{{ detalle.nombre_producto }}</h4>
-
-                            {% if detalle.marca %}
-                                <p>Marca: {{ detalle.marca }}</p>
-                            {% endif %}
-
-                            <p>
-                                Color: {{ detalle.color|default:"Sin especificar" }}
-                            </p>
-                            <p>
-                                Medidas: {{ detalle.medidas|default:"Sin especificar" }}
-                            </p>
-                            <p>
-                                Material: {{ detalle.material|default:"Sin especificar" }}
-                            </p>
-
-                            <p>Cantidad: {{ detalle.cantidad }}</p>
-
-                            <p>
-                                Precio unitario:
-                                ARS {{ detalle.precio_unitario|floatformat:"2g" }}
-                            </p>
-
-                            <p class="precio">
-                                Subtotal:
-                                ARS {{ detalle.subtotal|floatformat:"2g" }}
-                            </p>
-                        </article>
+<article class="compra-producto"><h4>{{ detalle.nombre_producto }}</h4>
+    {% if detalle.marca %}<p>{{ detalle.marca }}</p>{% endif %}
+    <p class="detalle-aclaracion">{% if detalle.color %}<span>Color: {{ detalle.color }}</span> {% endif %} {% if detalle.medidas %}<span>Medidas: {{ detalle.medidas }}</span> {% endif %} {% if detalle.material %}<span>Material: {{ detalle.material }}</span> {% endif %}</p>
+    <p>{{ detalle.cantidad }} × ARS {{ detalle.precio_unitario|floatformat:"2g" }} · <strong>ARS {{ detalle.subtotal|floatformat:"2g" }}</strong></p>
+</article>
                     {% endfor %}
 
                     <p class="precio">
@@ -300,85 +260,15 @@
                 </section>
             {% endfor %}
 
-            <h3>Resumen de la compra</h3>
-
-            <p>Productos: ARS {{ compra.total_productos|floatformat:"2g" }}</p>
-
-            {% with entregas=compra.total_entregas %}
-                {% if entregas == None %}
-                    <p>El costo de entrega no quedó registrado en esta compra.</p>
-                {% else %}
-                    <p>Entrega: ARS {{ entregas|floatformat:"2g" }}</p>
-                    <p class="carrito-total">
-                        {% if compra.estado == "pendiente" %}Total a pagar{% else %}Total de la compra{% endif %}:
-                        ARS {{ compra.total_con_entrega|floatformat:"2g" }}
-                    </p>
-                {% endif %}
-            {% endwith %}
         </section>
     </div>
-        <!-- Permite probar el pago sin utilizar dinero ni tarjetas reales. -->
     {% if compra.estado == "pendiente" %}
-        <section class="compra-bloque">
-            <h2>Pago con Mercado Pago</h2>
-            <p>Estás en el entorno de pruebas. No se realizan cobros reales.</p>
-
-            <form method="post" action="{% url 'pedidos:pagar' compra.codigo %}"
-                class="compra-acciones">
-                {% csrf_token %}
-                <button type="submit">Pagar con Mercado Pago</button>
+        <details class="compra-bloque">
+            <summary>Cancelar esta compra</summary>
+            <p>Se cancelan los pedidos de todas las tiendas. Los productos quedan en tu carrito.</p>
+            <form method="post" action="{% url 'pedidos:cancelar_compra' compra.codigo %}">
+                {% csrf_token %}<button class="boton-secundario" type="submit">Cancelar compra</button>
             </form>
-            {% if compra.mp_orden_id %}
-            <form method="post"
-                action="{% url 'pedidos:verificar_pago' compra.codigo %}"
-                class="compra-acciones">
-             {% csrf_token %}
-        <button type="submit">Verificar pago</button>
-    </form>
-{% endif %}
-
-        </section>
-
-    {% elif compra.estado == "confirmada" %}
-        <section class="compra-bloque">
-            <h2>Compra confirmada</h2>
-
-            <p>
-                Pago simulado aprobado el
-                {{ compra.fecha_confirmacion|date:"d/m/Y H:i" }}.
-            </p>
-
-            <p>Podés consultar arriba el estado de cada pedido.</p>
-        </section>
-
-    {% elif compra.estado == "rechazada" or compra.estado == "cancelada" %}
-        <p>
-            Para volver a comprar,
-            <a href="{% url 'carrito:detalle' %}">
-                revisá tu carrito y generá una nueva compra
-            </a>.
-        </p>
+        </details>
     {% endif %}
-    <!-- Permite cancelar una compra que todavía no fue pagada. -->
-{% if compra.estado == "pendiente" %}
-    <section class="compra-bloque">
-        <h2>Cancelar compra pendiente</h2>
-
-        <p>
-            Se cancelarán todos los pedidos de esta compra.
-            Los artículos permanecerán en tu carrito.
-        </p>
-
-        <form
-            method="post"
-            action="{% url 'pedidos:cancelar_compra' compra.codigo %}"
-        >
-            {% csrf_token %}
-
-            <button type="submit">
-                Cancelar compra pendiente
-            </button>
-        </form>
-    </section>
-{% endif %}
 {% endblock %}

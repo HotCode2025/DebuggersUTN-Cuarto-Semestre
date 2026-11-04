@@ -153,7 +153,8 @@ button:hover,
 .eslogan {
     margin: 2px 0 0;
     color: var(--texto-secundario);
-    font-size: 0.875rem;
+    font-size: 1.1rem;
+    font-weight: 700;
 }
 
 .navegacion {
@@ -838,3 +839,38 @@ aside[aria-label="Aviso de revisión"] {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
     }
 }
+/* Inicio de sesión: reutiliza los colores y controles del catálogo. */
+.acceso-cuenta {
+    width: min(100%, 28rem);
+    margin: clamp(1rem, 5vw, 4rem) auto;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+}
+.acceso-cuenta h1 { font-size: clamp(1.75rem, 4vw, 2.25rem); margin-bottom: .5rem; }
+.acceso-cuenta > p { color: var(--texto-secundario); }
+.acceso-cuenta form { display: grid; gap: 1rem; margin-top: 1.5rem; }
+.acceso-campo { display: grid; gap: .35rem; }
+.acceso-campo input { min-width: 0; width: 100%; }
+.acceso-cuenta .errorlist { color: var(--error); margin: 0; padding-inline-start: 1.25rem; }
+.acceso-cuenta .acceso-registro { margin: 1.5rem 0 0; border-top: 1px solid var(--borde); padding-top: 1rem; }
+
+/* Separa el usuario, la contraseña y el botón. */
+.acceso-cuenta form {
+    display: grid;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+/* Deja aire entre cada etiqueta y su casillero. */
+.acceso-cuenta .acceso-campo {
+    display: grid;
+    gap: 8px;
+}
+
+/* Mantiene el botón alineado a la izquierda. */
+.acceso-cuenta button {
+    justify-self: start;
+}
+

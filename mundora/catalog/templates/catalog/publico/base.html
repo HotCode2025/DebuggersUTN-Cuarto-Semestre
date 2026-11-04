@@ -23,6 +23,8 @@
         rel="stylesheet"
         href="{% static 'catalog/css/estilos.css' %}"
     >
+    <link rel="stylesheet" href="{% static 'catalog/css/navegacion.css' %}">
+    <link rel="stylesheet" href="{% static 'catalog/css/botones.css' %}">
 </head>
 <body>
     <a href="#contenido" class="saltar-contenido">
@@ -57,24 +59,24 @@
 
             <!-- Muestra los accesos según el estado de la sesión. -->
             <nav class="navegacion" aria-label="Navegación principal">
-                <a href="{% url 'catalogo:listado' %}">Catálogo</a>
+                <a href="{% url 'catalogo:listado' %}" data-icono="catalogo" {% if request.resolver_match.view_name == 'catalogo:listado' %}aria-current="page"{% endif %}>Catálogo</a>
 
                 {% if request.user.is_authenticated %}
-                    <a href="{% url 'accounts:mi_cuenta' %}">
+                    <a href="{% url 'accounts:mi_cuenta' %}" data-icono="cuenta" {% if request.resolver_match.view_name == 'accounts:mi_cuenta' %}aria-current="page"{% endif %}>
                         Mi cuenta
                     </a>
-                    <a href="{% url 'carrito:detalle' %}">
+                    <a href="{% url 'carrito:detalle' %}" data-icono="carrito" {% if request.resolver_match.view_name == 'carrito:detalle' %}aria-current="page"{% endif %}>
                         Mi carrito
                     </a>
-                    <a href="{% url 'pedidos:mis_compras' %}">
+                    <a href="{% url 'pedidos:mis_compras' %}" data-icono="compras" {% if request.resolver_match.view_name == 'pedidos:mis_compras' %}aria-current="page"{% endif %}>
                         Mis compras
                     </a>
                 {% else %}
-                    <a href="{% url 'accounts:iniciar_sesion' %}">
+                    <a href="{% url 'accounts:iniciar_sesion' %}" data-icono="ingresar" {% if request.resolver_match.view_name == 'accounts:iniciar_sesion' %}aria-current="page"{% endif %}>
                         Iniciar sesión
                     </a>
 
-                    <a href="{% url 'accounts:registro' %}" class="boton">
+                    <a href="{% url 'accounts:registro' %}" data-icono="registro" {% if request.resolver_match.view_name == 'accounts:registro' %}aria-current="page"{% endif %} class="boton">
                         Crear cuenta
                     </a>
                 {% endif %}
@@ -114,8 +116,20 @@
     </main>
 
     <footer class="pie">
+        
+   
+
         <p>MUNDORA · Diseño para hogares y ambientes.</p>
         <p>Productos de emprendedores y talleres argentinos.</p>
+        <p>© Debuggers UTN - Tecnicatura Universitaria en Programación - UTN FRSR - 2026</p>
+        <link rel="stylesheet" href="https://cloudflare.com">
+        <a href="https://github.com/HotCode2025/DebuggersUTN-Cuarto-Semestre/tree/E-Commerce_Mundora"" target="_blank" rel="noopener noreferrer" class="logo-github-link" aria-label="Ver código en GitHub">
+            <svg height="40" viewBox="0 0 16 16" width="40" class="logo-github-svg">
+            <path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82A7.833 7.833 0 0 0 8 3.84c-.68.003-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.16.73.72.82 1.13.16.45.68 1.35 3.12.88.01.64.01 1.11.01 1.27 0 .21-.15.46-.55.38A8.013 8.013 0 0 1 0 8c0-4.42 3.58-8 8-8z"></path>
+        </svg>
+        </a>
+
+
     </footer>
 </body>
 </html>

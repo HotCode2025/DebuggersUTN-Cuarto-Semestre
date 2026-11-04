@@ -1,0 +1,37 @@
+
+/* Barra principal: los íconos acompañan al texto, incluso al cambiar el tema. */
+.navegacion { gap: .5rem; }
+.navegacion :is(a,button) {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: .55rem .85rem; min-height: 44px; border: 1px solid #214e3c;
+    border-radius: .65rem; background: #245c46; color: white;
+    font: 600 .95rem/1.25 "Inter", Arial, sans-serif; text-decoration: none;
+}
+.navegacion :is(a,button):hover { background: #184431; color: white; }
+.navegacion [aria-current="page"] { box-shadow: inset 0 -3px #f5a663; }
+.navegacion .boton-tema { background: var(--superficie); color: var(--texto); border-color: var(--borde); }
+.navegacion .boton-tema:hover { background: var(--fondo); color: var(--texto); border-color: var(--foco); }
+.navegacion [hidden] { display: none; }
+.navegacion :is(a,button)::before {
+    content: ""; width: 1.15rem; height: 1.15rem; flex: none;
+    background: currentColor; mask: var(--icono) center / contain no-repeat;
+}
+.navegacion :is(a,button):focus-visible { outline: 3px solid var(--foco); outline-offset: 3px; }
+@media (max-width: 620px) {
+    .navegacion { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .navegacion :is(a,button) { justify-content: flex-start; }
+}
+.navegacion [data-icono="catalogo"] { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%223%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%2214%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3C%2Fsvg%3E"); }
+.navegacion [data-icono="cuenta"] { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%228%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M4%2021v-2a8%208%200%200%201%2016%200v2%22%2F%3E%3C%2Fsvg%3E"); }
+.navegacion [data-icono="carrito"] { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%203h3l3%2012h11l3-9H6%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2220%22%20r%3D%221%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2220%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E"); }
+.navegacion [data-icono="compras"] { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%203h14v18l-3-2-4%202-4-2-3%202zM8%208h8M8%2012h6%22%2F%3E%3C%2Fsvg%3E"); }
+.navegacion [data-icono="ingresar"] { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M13%203h7v18h-7M3%2012h12m-5-5%205%205-5%205%22%2F%3E%3C%2Fsvg%3E"); }
+.navegacion [data-icono="registro"] { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%228%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M2%2021v-2a7%207%200%200%201%2012-5m4%200v7m-3.5-3.5h7%22%2F%3E%3C%2Fsvg%3E"); }
+.navegacion .boton-tema { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%2015a9%209%200%200%201-11-12%209%209%200%201%200%2011%2012z%22%2F%3E%3C%2Fsvg%3E"); }
+:root[data-tema="oscuro"] .navegacion .boton-tema { --icono: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M12%202v2m0%2016v2M2%2012h2m16%200h2M5%205l2%202m10%2010%202%202M5%2019l2-2M17%207l2-2%22%2F%3E%3C%2Fsvg%3E"); }
+
+.encabezado .eslogan {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--texto);
+}

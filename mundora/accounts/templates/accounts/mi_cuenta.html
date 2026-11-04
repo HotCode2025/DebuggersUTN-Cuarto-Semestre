@@ -1,54 +1,45 @@
-<!DOCTYPE html>
-<html lang="es-AR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi cuenta | MUNDORA</title>
-</head>
-<body>
-    <main>
-        <h1>Mi cuenta</h1>
+{% extends "catalog/publico/base.html" %}
 
-        <!-- Muestra los datos del usuario autenticado. -->
-        <p>Hola, {{ request.user.first_name|default:request.user.username }}.</p>
+{% block titulo %}Mi cuenta | MUNDORA{% endblock %}
 
-        <dl>
-            <dt>Nombre de usuario</dt>
-            <dd>{{ request.user.username }}</dd>
+{% block contenido %}
+    <h1>Mi cuenta</h1>
+    <p>Hola, {{ request.user.first_name|default:request.user.username }}.</p>
 
-            <dt>Correo electrónico</dt>
-            <dd>{{ request.user.email }}</dd>
+    <div class="compra-revision">
+        <section class="compra-bloque">
+            <h2>Mis datos</h2>
+            <dl class="detalle-datos">
+                <dt>Nombre y apellido</dt>
+                <dd>{{ request.user.get_full_name|default:"Sin completar" }}</dd>
+                <dt>Nombre de usuario</dt>
+                <dd>{{ request.user.username }}</dd>
+                <dt>Correo electrónico</dt>
+                <dd>{{ request.user.email|default:"Sin completar" }}</dd>
+                <dt>Teléfono</dt>
+                <dd>{{ request.user.telefono|default:"Sin completar" }}</dd>
+            </dl>
+            <a class="boton" href="{% url 'accounts:editar_perfil' %}">Editar mis datos</a>
+        </section>
 
-            <dt>Teléfono</dt>
-            <dd>{{ request.user.telefono|default:"Sin completar" }}</dd>
-        </dl>
+        <nav class="compra-bloque" aria-labelledby="actividad-titulo">
+            <h2 id="actividad-titulo">Mi actividad</h2>
+            <p><a href="{% url 'pedidos:mis_compras' %}">Mis compras</a><br>
+                Consultá tus pedidos y su estado.</p>
+            <p><a href="{% url 'accounts:mi_domicilio' %}">Mi domicilio de entrega</a><br>
+                Revisá o cambiá la dirección donde recibís tus compras.</p>
+            <p><a href="{% url 'vendedores:panel' %}">Panel del vendedor</a><br>
+                Accedé al espacio de tu tienda.</p>
+        </nav>
+    </div>
 
-        <!-- Permite consultar la tienda asociada a esta cuenta. -->
-        <p>
-            <a href="{% url 'vendedores:panel' %}">
-                Ir al panel del vendedor
-            </a>
-        </p>
-
-        <!-- Permite consultar y editar el domicilio habitual. -->
-        <p>
-            <a href="{% url 'accounts:mi_domicilio' %}">
-                Mi domicilio de entrega
-            </a>
-        </p>
-
-        <!-- Permite consultar el historial de compras. -->
-        <p>
-            <a href="{% url 'pedidos:mis_compras' %}">
-                Mis compras
-            </a>
-        </p>
-
-        <!-- Cierra la sesión con protección CSRF. -->
-        <form method="post" action="{% url 'accounts:cerrar_sesion' %}">
-            {% csrf_token %}
-            <button type="submit">Cerrar sesión</button>
-        </form>
-    </main>
-</body>
-</html>
+    <div class="cuenta-acciones">
+    <form method="post" action="{% url 'accounts:cerrar_sesion' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton-secundario">Cerrar sesión</button>
+    </form>
+    {% if not request.user.is_staff and not request.user.is_superuser %}
+        <a class="boton boton-peligro" href="{% url 'accounts:eliminar_cuenta' %}">Eliminar mi cuenta</a>
+    {% endif %}
+    </div>
+{% endblock %}

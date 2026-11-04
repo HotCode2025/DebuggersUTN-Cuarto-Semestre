@@ -1,55 +1,106 @@
-<!DOCTYPE html>
-<html lang="es-AR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear cuenta | MUNDORA</title>
-</head>
-<body>
-    <main>
-        <h1>Creá tu cuenta en MUNDORA</h1>
+{% extends "catalog/publico/base.html" %}
 
-        <p>
-            Completá tus datos para registrarte.
-            Podés agregar tu domicilio más adelante.
-        </p>
+{% block titulo %}Crear cuenta | MUNDORA{% endblock %}
 
-        <!-- Muestra las confirmaciones de la operación. -->
-        {% if messages %}
-            <div role="status">
-                {% for mensaje in messages %}
-                    <p>{{ mensaje }}</p>
-                {% endfor %}
+{% block contenido %}
+<style>
+    /* Estilos exclusivos del registro. */
+    .registro-mundora {
+        width: min(100%, 680px);
+        margin: 0 auto;
+        padding: clamp(20px, 4vw, 36px);
+        border: 1px solid var(--borde);
+        border-radius: var(--radio);
+        background: var(--superficie);
+    }
+    .registro-mundora h1 {
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+        margin-bottom: 12px;
+    }
+    .registro-mundora .registro-intro {
+        color: var(--texto-secundario);
+        margin: 0 0 28px;
+    }
+    .registro-mundora form {
+        display: grid;
+        gap: 24px;
+    }
+    .registro-mundora .registro-campo {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+    }
+    .registro-mundora label { font-weight: 600; }
+    .registro-mundora input:not([type="hidden"]):not([type="checkbox"]) {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        padding: 11px 12px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        background: var(--fondo);
+        color: var(--texto);
+        font: inherit;
+    }
+    .registro-mundora .registro-ayuda {
+        color: var(--texto-secundario);
+        font-size: .875rem;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+    .registro-mundora .registro-ayuda ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .registro-mundora .errorlist {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--error);
+    }
+    .registro-mundora button { justify-self: start; }
+    .registro-mundora .registro-ingreso {
+        margin: 28px 0 0;
+        padding-top: 20px;
+        border-top: 1px solid var(--borde);
+    }
+</style>
+
+<section class="registro-mundora" aria-labelledby="titulo-registro">
+    <h1 id="titulo-registro">Creá tu cuenta en MUNDORA</h1>
+    <p class="registro-intro">
+        Completá tus datos. Podés agregar tu domicilio más adelante.
+    </p>
+
+    <!-- Los mensajes generales se muestran en la plantilla base. -->
+    <form method="post">
+        {% csrf_token %}
+        {{ formulario.non_field_errors }}
+
+        {% for campo in formulario.hidden_fields %}
+            {{ campo }}
+            {{ campo.errors }}
+        {% endfor %}
+
+        {% for campo in formulario.visible_fields %}
+            <div class="registro-campo">
+                {{ campo.label_tag }}
+                {{ campo }}
+                {% if campo.help_text %}
+                    <div class="registro-ayuda" id="{{ campo.auto_id }}_helptext">
+                        {{ campo.help_text|safe }}
+                    </div>
+                {% endif %}
+                {{ campo.errors }}
             </div>
-        {% endif %}
+        {% endfor %}
 
-        <!-- Envía los datos de registro de forma protegida. -->
-        <form method="post">
-            {% csrf_token %}
+        <button type="submit">Crear cuenta</button>
+    </form>
 
-            {{ formulario.non_field_errors }}
-
-            {% for campo in formulario %}
-                <div>
-                    {{ campo.label_tag }}
-                    {{ campo }}
-
-                    {% if campo.help_text %}
-                        <div id="{{ campo.auto_id }}_helptext">
-                            {{ campo.help_text|safe }}
-                        </div>
-                    {% endif %}
-
-                    {{ campo.errors }}
-                </div>
-            {% endfor %}
-
-            <button type="submit">Crear cuenta</button>
-        </form>
-        <p>
+    <p class="registro-ingreso">
         ¿Ya tenés una cuenta?
         <a href="{% url 'accounts:iniciar_sesion' %}">Iniciá sesión</a>
     </p>
-    </main>
-</body>
-</html>
+</section>
+{% endblock %}

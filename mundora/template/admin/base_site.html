@@ -1,0 +1,59 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Administración MUNDORA{% endblock %}
+
+{% block branding %}
+    <div id="site-name">
+        <a class="mundora-marca" href="{% url 'admin:index' %}">
+            <img src="{% static 'catalog/img/logo-mundora-oscuro.png' %}" alt="MUNDORA">
+            <span>Administración</span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        :root, html[data-theme] {
+            --primary: #245c46;
+            --secondary: #194532;
+            --header-bg: #194532;
+            --header-color: #fff;
+            --header-branding-color: #fff;
+            --header-link-color: #fff;
+            --breadcrumbs-bg: #245c46;
+            --breadcrumbs-fg: #fff;
+            --breadcrumbs-link-fg: #fff;
+            --button-bg: #245c46;
+            --button-hover-bg: #194532;
+            --default-button-bg: #245c46;
+            --default-button-hover-bg: #194532;
+        }
+
+        #header {
+            border-bottom: 3px solid #e98a45;
+        }
+
+        #site-name .mundora-marca {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            color: #fff;
+        }
+
+        .mundora-marca img {
+            display: block;
+            width: 130px;
+            height: auto;
+        }
+
+        .mundora-marca span {
+            padding-left: 12px;
+            border-left: 1px solid #91ac9d;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+    </style>
+{% endblock %}
