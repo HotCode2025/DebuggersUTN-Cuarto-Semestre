@@ -1,0 +1,68 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Pedidos de mi tienda | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'vendedores:panel' %}">
+            ← Volver al panel del vendedor
+        </a>
+    </p>
+
+    <h1>Pedidos de {{ tienda.nombre }}</h1>
+
+    <p>Compras confirmadas que incluyen productos de tu tienda.</p>
+
+    <!-- Lista únicamente los pedidos propios. -->
+    {% for pedido in pagina %}
+        <article class="compra-bloque">
+            <h2>Pedido {{ pedido.pk }}</h2>
+
+            <p>
+                Confirmado el
+                {{ pedido.compra.fecha_confirmacion|date:"d/m/Y H:i" }}
+            </p>
+
+            <p>
+                <strong>
+                    Estado: {{ pedido.get_estado_display }}
+                </strong>
+            </p>
+
+            <p>
+                Total de productos:
+                ARS {{ pedido.subtotal|floatformat:"2g" }}
+            </p>
+
+            <p>
+                <a href="{% url 'vendedores:detalle_pedido' pedido.pk %}">
+                    Ver detalle del pedido
+                </a>
+            </p>
+        </article>
+    {% empty %}
+        <p>Tu tienda todavía no tiene pedidos de compras confirmadas.</p>
+    {% endfor %}
+
+    <!-- Permite recorrer el historial en páginas de diez pedidos. -->
+    {% if pagina.has_other_pages %}
+        <nav class="compra-acciones" aria-label="Páginas de pedidos">
+            {% if pagina.has_previous %}
+                <a href="?pagina={{ pagina.previous_page_number }}">
+                    Anterior
+                </a>
+            {% endif %}
+
+            <span>
+                Página {{ pagina.number }}
+                de {{ pagina.paginator.num_pages }}
+            </span>
+
+            {% if pagina.has_next %}
+                <a href="?pagina={{ pagina.next_page_number }}">
+                    Siguiente
+                </a>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

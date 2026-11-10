@@ -1,0 +1,79 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Mis compras | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'accounts:mi_cuenta' %}">
+            ← Volver a mi cuenta
+        </a>
+    </p>
+
+    <h1>Mis compras</h1>
+
+    <p>Consultá tus compras y el estado de sus pedidos.</p>
+
+    <!-- Cada tarjeta corresponde a una compra del usuario. -->
+    {% for compra in pagina %}
+        <article class="compra-bloque">
+            <h2>Compra del {{ compra.fecha_creacion|date:"d/m/Y" }}</h2>
+
+            <p>Código: {{ compra.codigo }}</p>
+            <p>
+                <strong>
+                    Estado: {{ compra.get_estado_display }}
+                </strong>
+            </p>
+
+            <p>
+                Total de productos:
+                ARS {{ compra.total_productos|floatformat:"2g" }}
+            </p>
+
+            <p class="detalle-aclaracion">
+                No incluye costos de envío.
+            </p>
+
+            <ul>
+                {% for pedido in compra.pedidos.all %}
+                    <li>
+                        {{ pedido.nombre_tienda }} —
+                        {{ pedido.get_estado_display }}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <a href="{% url 'pedidos:detalle' compra.codigo %}">
+                Ver detalle de la compra
+            </a>
+        </article>
+    {% empty %}
+        <p>Todavía no tenés compras registradas.</p>
+
+        <a href="{% url 'catalogo:listado' %}">
+            Explorar el catálogo
+        </a>
+    {% endfor %}
+
+    <!-- Divide el historial en páginas de diez compras. -->
+    {% if pagina.has_other_pages %}
+        <nav class="compra-acciones" aria-label="Páginas de mis compras">
+            {% if pagina.has_previous %}
+                <a href="?pagina={{ pagina.previous_page_number }}">
+                    Anterior
+                </a>
+            {% endif %}
+
+            <span>
+                Página {{ pagina.number }}
+                de {{ pagina.paginator.num_pages }}
+            </span>
+
+            {% if pagina.has_next %}
+                <a href="?pagina={{ pagina.next_page_number }}">
+                    Siguiente
+                </a>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

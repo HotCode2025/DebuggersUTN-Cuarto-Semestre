@@ -1,0 +1,50 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Panel del vendedor | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p><a href="{% url 'accounts:mi_cuenta' %}">← Volver a mi cuenta</a></p>
+    <h1>Panel del vendedor</h1>
+
+    {% if tienda %}
+        <div class="compra-revision">
+            <section class="compra-bloque" aria-labelledby="titulo-tienda">
+                <h2 id="titulo-tienda">{{ tienda.nombre }}</h2>
+                {% if tienda.descripcion %}<p>{{ tienda.descripcion }}</p>{% endif %}
+                <p>Estado de la tienda: <strong>{{ tienda.get_estado_display }}</strong></p>
+                {% if tienda.estado == "pendiente" %}
+                    <p class="carrito-aviso">Tu tienda está pendiente de aprobación. Todavía no podés publicar productos.</p>
+                {% elif tienda.estado == "rechazada" %}
+                    <p class="carrito-aviso">Tu tienda fue rechazada. Revisá las observaciones del administrador.</p>
+                {% endif %}
+                {% if tienda.observaciones_revision %}
+                    <h3>Observaciones de la revisión</h3>
+                    {{ tienda.observaciones_revision|linebreaks }}
+                {% endif %}
+                <p><a href="{% url 'vendedores:pedidos' %}">Ver pedidos de la tienda</a></p>
+            </section>
+
+            <section class="compra-bloque" aria-labelledby="titulo-productos">
+                <h2 id="titulo-productos">Mis productos</h2>
+                <p><a class="boton" href="{% url 'vendedores:crear_producto' %}">Crear producto</a></p>
+                <div class="compra-productos">
+                    {% for producto in productos %}
+                        <article class="compra-producto">
+                            <h3><a href="{% url 'vendedores:detalle_producto' producto.pk %}">{{ producto.nombre }}</a></h3>
+                            <p>{{ producto.categoria.nombre }}</p>
+                            <p>Revisión: <strong>{{ producto.get_estado_revision_display }}</strong><br>
+                               Publicado: {{ producto.publicado|yesno:"Sí,No" }}</p>
+                        </article>
+                    {% empty %}
+                        <p>Todavía no cargaste productos en tu tienda.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    {% else %}
+        <section class="compra-bloque">
+            <h2>Mi tienda</h2>
+            <p>Todavía no tenés una tienda asociada a tu cuenta.</p>
+        </section>
+    {% endif %}
+{% endblock %}

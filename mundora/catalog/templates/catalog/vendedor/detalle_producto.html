@@ -1,0 +1,74 @@
+{% extends "catalog/publico/base.html" %}
+{% block titulo %}{{ producto.nombre }} | Panel del vendedor{% endblock %}
+{% block contenido %}
+<p><a href="{% url 'vendedores:panel' %}">← Volver al panel del vendedor</a></p>
+<h1>{{ producto.nombre }}</h1>
+<div class="compra-revision">
+    <section class="compra-bloque">
+        <h2>Publicación</h2>
+        <dl class="detalle-datos">
+            <dt>Estado</dt><dd>{{ producto.publicado|yesno:"Publicado,Sin publicar" }}</dd>
+            <dt>Revisión</dt><dd>{{ producto.get_estado_revision_display }}</dd>
+        </dl>
+        {% if producto.estado_revision == "pendiente" %}
+            <p class="carrito-aviso">Esta publicación todavía no está verificada.</p>
+        {% elif producto.estado_revision == "rechazado" %}
+            <p class="carrito-aviso">Revisá las observaciones y corregí el producto antes de solicitar una nueva revisión.</p>
+        {% endif %}
+        {% if producto.observaciones_revision %}
+            <h3>Observaciones del administrador</h3>{{ producto.observaciones_revision|linebreaks }}
+        {% endif %}
+        <form class="compra-acciones" method="post" action="{% url 'vendedores:cambiar_publicacion' producto.pk %}">
+            {% csrf_token %}
+            {% if producto.publicado %}
+                <button type="submit" name="accion" value="pausar">Pausar publicación</button>
+            {% elif producto.estado_revision == "rechazado" %}
+                <button type="submit" name="accion" value="solicitar_revision">Solicitar nueva revisión</button>
+            {% else %}
+                <button type="submit" name="accion" value="publicar">Publicar producto</button>
+            {% endif %}
+        </form>
+    </section>
+    <section class="compra-bloque">
+        <h2>Datos del producto</h2>
+        <p>{{ producto.tienda.nombre }} · {{ producto.categoria.nombre }}</p>
+        {{ producto.descripcion|linebreaks }}
+        <p>Marca: {{ producto.marca|default:"Sin especificar" }}</p>
+        <a href="{% url 'vendedores:editar_producto' producto.pk %}">Editar producto</a>
+    </section>
+</div>
+<section>
+    <h2>Variantes</h2>
+    <a class="boton" href="{% url 'vendedores:gestionar_variantes' producto.pk %}">Administrar variantes</a>
+    <div class="detalle-variantes">
+        {% for variante in producto.variantes.all %}
+            <article class="detalle-variante">
+                <h3>Variante {{ forloop.counter }}</h3>
+                {% if variante.imagen %}<img class="detalle-variante-imagen" src="{{ variante.imagen.url }}" alt="Variante {{ forloop.counter }} de {{ producto.nombre }}" loading="lazy">{% endif %}
+                <dl class="detalle-datos">
+                    <dt>Color</dt><dd>{{ variante.color|default:"Sin especificar" }}</dd>
+                    <dt>Medidas</dt><dd>{{ variante.medidas|default:"Sin especificar" }}</dd>
+                    <dt>Material</dt><dd>{{ variante.material|default:"Sin especificar" }}</dd>
+                    <dt>Precio</dt><dd>ARS {{ variante.precio|floatformat:"2g" }}</dd>
+                    <dt>Stock</dt><dd>{{ variante.stock }}</dd>
+                    <dt>Activa</dt><dd>{{ variante.activa|yesno:"Sí,No" }}</dd>
+                </dl>
+            </article>
+        {% empty %}<p>Todavía no cargaste variantes.</p>{% endfor %}
+    </div>
+</section>
+<section>
+    <h2>Galería</h2>
+    <a href="{% url 'vendedores:gestionar_galeria' producto.pk %}">Administrar galería</a>
+    <div class="detalle-variantes">
+        {% for foto in producto.imagenes.all %}
+            {% if foto.imagen %}
+                <figure class="detalle-variante">
+                    <img src="{{ foto.imagen.url }}" alt="{{ foto.texto_alternativo|default:producto.nombre }}" width="240" loading="lazy">
+                    {% if foto.texto_alternativo %}<figcaption>{{ foto.texto_alternativo }}</figcaption>{% endif %}
+                </figure>
+            {% endif %}
+        {% empty %}<p>Todavía no cargaste fotos en la galería.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

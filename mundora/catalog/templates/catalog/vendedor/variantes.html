@@ -1,0 +1,39 @@
+{% extends "catalog/publico/base.html" %}
+{% block titulo %}Variantes de {{ producto.nombre }} | MUNDORA{% endblock %}
+{% block contenido %}
+<p><a href="{% url 'vendedores:detalle_producto' producto.pk %}">← Volver al producto</a></p>
+<h1>Administrar variantes</h1>
+<p><strong>{{ producto.nombre }}</strong> · Actualizá las características, el precio y el stock de cada opción.</p>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ conjunto.management_form }}
+    {{ conjunto.non_form_errors }}
+    <div class="detalle-variantes">
+        {% for fila in conjunto %}
+            <fieldset class="detalle-variante">
+                <legend>{% if fila.instance.pk %}Variante {{ forloop.counter }}{% else %}Nueva variante{% endif %}</legend>
+                {% if not fila.instance.pk %}<p class="detalle-aclaracion">Dejá esta fila sin completar si no querés agregar otra variante.</p>{% endif %}
+                {{ fila.non_field_errors }}
+                {% for oculto in fila.hidden_fields %}{{ oculto }}{{ oculto.errors }}{% endfor %}
+                {% for campo in fila.visible_fields %}
+                    {% if campo.name != "DELETE" or fila.instance.pk %}
+                        <div>
+                            {% if campo.name == "DELETE" %}
+                                <label for="{{ campo.id_for_label }}">{{ campo }} Eliminar esta variante al guardar</label>
+                            {% else %}
+                                {{ campo.label_tag }} {{ campo }}
+                            {% endif %}
+                            {% if campo.help_text %}<small id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</small>{% endif %}
+                            {{ campo.errors }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </fieldset>
+        {% endfor %}
+    </div>
+    <div class="compra-acciones">
+        <button type="submit">Guardar variantes</button>
+        <a href="{% url 'vendedores:detalle_producto' producto.pk %}">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

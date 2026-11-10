@@ -1,0 +1,45 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}{% if es_nuevo %}Crear producto{% else %}Editar producto{% endif %} | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p><a href="{% url 'vendedores:panel' %}">← Volver al panel del vendedor</a></p>
+
+    {% if es_nuevo %}
+        <h1>Crear producto</h1>
+        <p>Completá los datos generales. El producto se guardará como borrador.</p>
+    {% else %}
+        <h1>Editar producto</h1>
+        <p>Estás editando <strong>{{ producto.nombre }}</strong>.</p>
+    {% endif %}
+
+    <section class="compra-bloque" aria-labelledby="datos-producto">
+        <h2 id="datos-producto">Datos del producto</h2>
+        <form method="post" class="formulario-domicilio">
+            {% csrf_token %}
+            {{ formulario.non_field_errors }}
+            {% for campo in formulario.hidden_fields %}
+                {{ campo }}{{ campo.errors }}
+            {% endfor %}
+            {% for campo in formulario.visible_fields %}
+                <div>
+                    {{ campo.label_tag }}
+                    {{ campo }}
+                    {% if campo.help_text %}
+                        <p class="detalle-aclaracion" id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</p>
+                    {% endif %}
+                    {{ campo.errors }}
+                </div>
+            {% endfor %}
+            <footer class="compra-acciones">
+                {% if es_nuevo %}
+                    <button type="submit">Guardar borrador</button>
+                    <a href="{% url 'vendedores:panel' %}">Cancelar</a>
+                {% else %}
+                    <button type="submit">Guardar cambios</button>
+                    <a href="{% url 'vendedores:detalle_producto' producto.pk %}">Cancelar</a>
+                {% endif %}
+            </footer>
+        </form>
+    </section>
+{% endblock %}

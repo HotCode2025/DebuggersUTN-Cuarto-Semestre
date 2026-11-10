@@ -1,0 +1,46 @@
+{% extends "catalog/publico/base.html" %}
+{% block titulo %}Galería de {{ producto.nombre }} | MUNDORA{% endblock %}
+{% block contenido %}
+<p><a href="{% url 'vendedores:detalle_producto' producto.pk %}">← Volver al producto</a></p>
+<h1>Galería de {{ producto.nombre }}</h1>
+<p>Elegí las fotos que se muestran en el catálogo y ajustá su orden.</p>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ conjunto.management_form }}
+    {{ conjunto.non_form_errors }}
+    <div class="detalle-variantes">
+        {% for fila in conjunto %}
+            <fieldset class="detalle-variante">
+                <legend>{% if fila.instance.pk %}Foto {{ forloop.counter }}{% else %}Agregar una foto{% endif %}</legend>
+                {% if fila.instance.pk %}
+                    {% if fila.initial.imagen %}
+                        <img class="detalle-variante-imagen" src="{{ fila.initial.imagen.url }}"
+                             alt="{{ fila.initial.texto_alternativo|default:producto.nombre }}" loading="lazy">
+                    {% endif %}
+                {% else %}
+                    <p class="detalle-aclaracion">Dejá esta tarjeta vacía si no querés agregar otra foto.</p>
+                {% endif %}
+                {{ fila.non_field_errors }}
+                {% for oculto in fila.hidden_fields %}{{ oculto }}{{ oculto.errors }}{% endfor %}
+                {% for campo in fila.visible_fields %}
+                    {% if campo.name != "DELETE" or fila.instance.pk %}
+                        <div>
+                            {% if campo.name == "DELETE" %}
+                                <label for="{{ campo.id_for_label }}">{{ campo }} Eliminar esta foto al guardar</label>
+                            {% else %}
+                                {{ campo.label_tag }} {{ campo }}
+                            {% endif %}
+                            {% if campo.help_text %}<small id="{{ campo.auto_id }}_helptext">{{ campo.help_text }}</small>{% endif %}
+                            {{ campo.errors }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </fieldset>
+        {% endfor %}
+    </div>
+    <div class="compra-acciones">
+        <button type="submit">Guardar galería</button>
+        <a href="{% url 'vendedores:detalle_producto' producto.pk %}">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

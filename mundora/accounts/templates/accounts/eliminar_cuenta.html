@@ -1,0 +1,20 @@
+{% extends "catalog/publico/base.html" %}
+{% block titulo %}Eliminar mi cuenta | MUNDORA{% endblock %}
+{% block contenido %}
+<section class="acceso-cuenta">
+    <h1>¿Eliminar tu cuenta?</h1>
+    <p>Vas a perder el acceso a <strong>{{ request.user.username }}</strong>. Esta acción no se puede deshacer.</p>
+    <p>Solo podés eliminarla si no tiene compras ni una tienda asociada.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="acceso-campo">
+            <label for="clave">Confirmá tu contraseña</label>
+            <input id="clave" type="password" name="clave" autocomplete="current-password" required
+                   {% if error %}aria-invalid="true" aria-describedby="error-clave"{% endif %}>
+            {% if error %}<p class="errorlist" id="error-clave" role="alert">{{ error }}</p>{% endif %}
+        </div>
+        <button class="boton-peligro-firme" type="submit">Eliminar mi cuenta definitivamente</button>
+        <a class="boton boton-secundario" href="{% url 'accounts:mi_cuenta' %}">Cancelar y volver a mi cuenta</a>
+    </form>
+</section>
+{% endblock %}

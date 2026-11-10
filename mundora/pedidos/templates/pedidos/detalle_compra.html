@@ -1,0 +1,274 @@
+{% extends "catalog/publico/base.html" %}
+{% block titulo %}Compra #{{ compra.pk }} | MUNDORA{% endblock %}
+{% block contenido %}
+    <nav class="compra-acciones" aria-label="Volver"><a href="{% url 'pedidos:mis_compras' %}">← Mis compras</a><a href="{% url 'carrito:detalle' %}">Mi carrito</a></nav>
+    <h1>Compra #{{ compra.pk }}</h1>
+    <p><strong>{% if compra.estado == "pendiente" %}Pendiente de pago{% else %}{{ compra.get_estado_display }}{% endif %}</strong> · {{ compra.fecha_creacion|date:"d/m/Y H:i" }}</p>
+    {% if compra.motivo_rechazo %}<p class="carrito-aviso">{{ compra.motivo_rechazo }}</p>{% endif %}
+    <div class="compra-revision">
+        <section class="compra-bloque">
+            <h2>Resumen</h2>
+            <p>Productos: ARS {{ compra.total_productos|floatformat:"2g" }}</p>
+
+            {% with entregas=compra.total_entregas %}
+                {% if entregas == None %}
+                    <p>El costo de entrega no quedó registrado en esta compra.</p>
+                {% else %}
+                    <p>Entrega: ARS {{ entregas|floatformat:"2g" }}</p>
+                    <p class="carrito-total">
+                        {% if compra.estado == "pendiente" %}Total a pagar{% else %}Total de la compra{% endif %}:
+                        ARS {{ compra.total_con_entrega|floatformat:"2g" }}
+                    </p>
+                {% endif %}
+            {% endwith %}
+
+            {% if compra.estado == "pendiente" %}
+                <p class="detalle-aclaracion">Pago de prueba. No se cobra dinero real.</p>
+<form method="post" action="{% url 'pedidos:pagar' compra.codigo %}"
+                class="compra-acciones">
+                {% csrf_token %}
+                <button type="submit">Pagar con Mercado Pago</button>
+            </form>
+            {% if compra.mp_orden_id %}
+            <form method="post"
+                action="{% url 'pedidos:verificar_pago' compra.codigo %}"
+                class="compra-acciones">
+             {% csrf_token %}
+        <button type="submit">Verificar pago</button>
+    </form>
+{% endif %}
+            {% elif compra.estado == "confirmada" %}
+                <p>Pago acreditado{% if compra.fecha_confirmacion %} el {{ compra.fecha_confirmacion|date:"d/m/Y H:i" }}{% endif %}.</p>
+            {% elif compra.estado == "rechazada" or compra.estado == "cancelada" %}
+                <p><a href="{% url 'carrito:detalle' %}">Volver a comprar desde el carrito</a></p>
+            {% endif %}
+            <details><summary>Código de compra</summary><p style="overflow-wrap:anywhere">{{ compra.codigo }}</p></details>
+        </section>
+        <section class="compra-bloque">
+            <h2>Pedidos por tienda</h2>
+            {% for pedido in compra.pedidos.all %}
+                <section class="compra-producto">
+                    <h3>{{ pedido.nombre_tienda }}</h3>
+
+                    <p>
+                        Pedido {{ pedido.pk }} ·
+                        {{ pedido.get_estado_display }}
+                    </p>
+
+                                        {% if pedido.modalidad_entrega == "envio" %}<h4>Envío a domicilio</h4><p>{{ compra.calle }} {{ compra.numero }}{% if compra.detalle_direccion %}, {{ compra.detalle_direccion }}{% endif %}<br>{{ compra.localidad }}, {{ compra.provincia }} (CP {{ compra.codigo_postal }})<br>{{ compra.destinatario }} · {{ compra.telefono_contacto }}</p>{% endif %}
+
+                    <!-- Diferencia el retiro del seguimiento de un envío. -->
+                    {% if pedido.modalidad_entrega == "retiro" %}
+                        <section>
+                            <h4>Retiro en tienda</h4>
+                            <p>{{ pedido.direccion_retiro }}</p>
+
+                            {% if pedido.estado == "preparacion" %}
+                                <p>
+                                    La tienda está preparando tus artículos.
+                                    Esperá a que indique que están listos.
+                                </p>
+                            {% elif pedido.estado == "listo_retiro" %}
+                                <p>
+                                    <strong>Tu pedido está listo para retirar.</strong>
+                                </p>
+                                <p>
+                                    Disponible desde el
+                                    {{ pedido.fecha_listo_retiro|date:"d/m/Y H:i" }}.
+                                </p>
+                            {% endif %}
+                        </section>
+
+                    {% elif pedido.fecha_despacho %}
+                  
+                        <section>
+                            <h4>Seguimiento del envío</h4>
+
+                            <p>
+                                Transporte: {{ pedido.empresa_transporte }}
+                            </p>
+
+                            <p>
+                                Código de seguimiento:
+                                <strong>{{ pedido.codigo_seguimiento }}</strong>
+                            </p>
+
+                            <p>
+                                Despachado el
+                                {{ pedido.fecha_despacho|date:"d/m/Y H:i" }}
+                            </p>
+
+                            <p class="detalle-aclaracion">
+                                Consultá este código con la empresa de transporte.
+                            </p>
+                        </section>
+
+                    {% elif pedido.estado == "preparacion" %}
+                        <p>
+                            La tienda está preparando tu pedido.
+                            Los datos de seguimiento aparecerán cuando registre el despacho.
+                        </p>
+                    {% endif %}
+                    <!-- Permite confirmar la recepción de este pedido en particular. -->
+                    {% if compra.estado == "confirmada" and pedido.estado == "enviado" or compra.estado == "confirmada" and pedido.estado == "listo_retiro" %}
+                        <form
+                            method="post"
+                            action="{% url 'pedidos:confirmar_recepcion' pedido.pk %}"
+                        >
+                            {% csrf_token %}
+
+                            <p>
+                                Confirmá únicamente cuando hayas recibido todos
+                                los artículos de este pedido.
+                            </p>
+
+                            <button type="submit">
+                                Confirmar recepción
+                            </button>
+                        </form>
+
+                    {% elif pedido.estado == "entregado" %}
+                        <p>
+                            <strong>Recepción confirmada.</strong>
+
+                            {% if pedido.fecha_entrega %}
+                                El {{ pedido.fecha_entrega|date:"d/m/Y H:i" }}.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                     <!-- Permite cancelar únicamente el pedido de esta tienda. -->
+                    {% if compra.estado == "confirmada" and pedido.estado == "preparacion" or compra.estado == "confirmada" and pedido.estado == "listo_retiro" and pedido.modalidad_entrega == "retiro" %}
+                        <section>
+                            <h4>Cancelar este pedido</h4>
+
+                            <p>
+                                Se cancelarán todos los artículos de este pedido,
+                                se repondrán sus unidades y se registrará un reembolso simulado
+                                de ARS {{ pedido.subtotal|floatformat:"2g" }}.
+                                Los pedidos de otras tiendas no se modificarán.
+                            </p>
+
+                            <form
+                                method="post"
+                                action="{% url 'pedidos:cancelar_pedido' pedido.pk %}"
+                            >
+                                {% csrf_token %}
+
+                                <button type="submit">
+                                    Cancelar pedido y simular reembolso
+                                </button>
+                            </form>
+                        </section>
+                    {% endif %}
+
+                    <!-- Conserva visible el resultado económico de la cancelación. -->
+                    {% if pedido.fecha_reembolso_simulado %}
+                        <section>
+                            <h4>Reembolso simulado registrado</h4>
+
+                            <p>
+                                Importe: ARS
+                                {{ pedido.importe_reembolso_simulado|floatformat:"2g" }}
+                            </p>
+
+                            <p>
+                                Fecha:
+                                {{ pedido.fecha_reembolso_simulado|date:"d/m/Y H:i" }}
+                            </p>
+
+                            <p>
+                                Esta operación es de prueba y no mueve dinero real.
+                                El subtotal mostrado conserva el importe original del pedido.
+                            </p>
+                        </section>
+                    {% endif %}
+
+                     <!-- Permite solicitar y consultar la devolución de este pedido. -->
+                    {% if compra.estado == "confirmada" %}
+                        {% if pedido.estado_devolucion == "sin_solicitud" %}
+                            {% if pedido.estado == "enviado" or pedido.estado == "entregado" %}
+                                <p>
+                                    <a href="{% url 'pedidos:solicitar_devolucion' pedido.pk %}">
+                                        Solicitar devolución del pedido
+                                    </a>
+                                </p>
+                            {% endif %}
+                        {% else %}
+                            <section>
+                                <h4>Devolución</h4>
+
+                                <p>
+                                    Estado: {{ pedido.get_estado_devolucion_display }}
+                                </p>
+
+                                <p>
+                                    Solicitada el
+                                    {{ pedido.fecha_solicitud_devolucion|date:"d/m/Y H:i" }}.
+                                </p>
+
+                                <p><strong>Motivo:</strong></p>
+                                {{ pedido.motivo_devolucion|linebreaks }}
+                                <!-- Muestra la explicación registrada por el vendedor. -->
+                                {% if pedido.fecha_respuesta_devolucion %}
+                                    <h4>Respuesta de la tienda</h4>
+
+                                    {{ pedido.respuesta_devolucion|linebreaks }}
+
+                                    <p>
+                                        Respondida el
+                                        {{ pedido.fecha_respuesta_devolucion|date:"d/m/Y H:i" }}.
+                                    </p>
+                                {% endif %}
+
+                                {% if pedido.estado_devolucion == "aceptada" %}
+                                    <p>
+                                        Seguí las instrucciones de la tienda para devolver los artículos.
+                                        El reembolso todavía no fue registrado.
+                                    </p>
+                                {% endif %}
+                            </section>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Informa el cierre de la devolución del pedido de esta tienda. -->
+                    {% if pedido.estado_devolucion == "completada" %}
+                        <section>
+                            <h4>Devolución completada</h4>
+
+                            <p>
+                                La tienda registró la recepción el
+                                {{ pedido.fecha_recepcion_devolucion|date:"d/m/Y H:i" }}.
+                            </p>
+
+                            <p><strong>Observaciones de la tienda:</strong></p>
+                            {{ pedido.observaciones_recepcion_devolucion|linebreaks }}
+                        </section>
+                    {% endif %}
+                    
+                    {% for detalle in pedido.detalles.all %}
+<article class="compra-producto"><h4>{{ detalle.nombre_producto }}</h4>
+    {% if detalle.marca %}<p>{{ detalle.marca }}</p>{% endif %}
+    <p class="detalle-aclaracion">{% if detalle.color %}<span>Color: {{ detalle.color }}</span> {% endif %} {% if detalle.medidas %}<span>Medidas: {{ detalle.medidas }}</span> {% endif %} {% if detalle.material %}<span>Material: {{ detalle.material }}</span> {% endif %}</p>
+    <p>{{ detalle.cantidad }} × ARS {{ detalle.precio_unitario|floatformat:"2g" }} · <strong>ARS {{ detalle.subtotal|floatformat:"2g" }}</strong></p>
+</article>
+                    {% endfor %}
+
+                    <p class="precio">
+                        Subtotal de la tienda:
+                        ARS {{ pedido.subtotal|floatformat:"2g" }}
+                    </p>
+                </section>
+            {% endfor %}
+
+        </section>
+    </div>
+    {% if compra.estado == "pendiente" %}
+        <details class="compra-bloque">
+            <summary>Cancelar esta compra</summary>
+            <p>Se cancelan los pedidos de todas las tiendas. Los productos quedan en tu carrito.</p>
+            <form method="post" action="{% url 'pedidos:cancelar_compra' compra.codigo %}">
+                {% csrf_token %}<button class="boton-secundario" type="submit">Cancelar compra</button>
+            </form>
+        </details>
+    {% endif %}
+{% endblock %}

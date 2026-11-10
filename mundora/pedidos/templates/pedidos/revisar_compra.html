@@ -1,0 +1,85 @@
+{% extends "catalog/publico/base.html" %}
+
+{% block titulo %}Revisar compra | MUNDORA{% endblock %}
+
+{% block contenido %}
+    <p>
+        <a href="{% url 'carrito:detalle' %}">
+            ← Volver al carrito
+        </a>
+    </p>
+
+    <h1>Revisá tu compra</h1>
+
+    {% if errores %}
+        <!-- Detiene el proceso si falta información o disponibilidad. -->
+        <section class="compra-bloque" aria-labelledby="titulo-problemas">
+            <h2 id="titulo-problemas">Antes de continuar</h2>
+
+            <ul class="errorlist">
+                {% for error in errores %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+
+            <div class="compra-acciones">
+                {% if not domicilio %}
+                    <a
+                        href="{% url 'accounts:mi_domicilio' %}"
+                        class="boton detalle-enlace"
+                    >
+                        Completar domicilio
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'carrito:detalle' %}" class="detalle-enlace">
+                    Revisar el carrito
+                </a>
+            </div>
+        </section>
+    {% else %}
+        <div class="compra-revision">
+            <section class="compra-bloque">
+                <h2>Tus productos</h2>
+                {% for item in items %}
+<article class="compra-producto"><h3>{{ item.variante.producto.nombre }}</h3>
+    <p>{{ item.variante.producto.tienda.nombre }}</p>
+    {% if item.variante.producto.estado_revision != "aprobado" %}<p class="etiqueta etiqueta-pendiente">Publicación sin verificar</p>{% endif %}
+    <p class="detalle-aclaracion">{% if item.variante.color %}<span>Color: {{ item.variante.color }}</span> {% endif %} {% if item.variante.medidas %}<span>Medidas: {{ item.variante.medidas }}</span> {% endif %} {% if item.variante.material %}<span>Material: {{ item.variante.material }}</span> {% endif %}</p>
+    <p>{{ item.cantidad }} × ARS {{ item.variante.precio|floatformat:"2g" }} · <strong>ARS {{ item.subtotal|floatformat:"2g" }}</strong></p>
+</article>
+                {% endfor %}
+                <p><strong>Productos: ARS {{ total_productos|floatformat:"2g" }}</strong></p>
+            </section>
+            <section class="compra-bloque">
+                <h2>¿Envío o retiro?</h2>
+                <details>
+                    <summary>Tu domicilio para los envíos</summary>
+                    <p>{{ domicilio.calle }} {{ domicilio.numero }}{% if domicilio.detalle_direccion %}, {{ domicilio.detalle_direccion }}{% endif %}<br>{{ domicilio.localidad }}, {{ domicilio.provincia }} (CP {{ domicilio.codigo_postal }})<br>{{ domicilio.destinatario }} · {{ domicilio.telefono_contacto }}</p>
+                    <a href="{% url 'accounts:mi_domicilio' %}">Cambiar domicilio</a>
+                </details>
+                <form class="formulario-domicilio" method="post" action="{% url 'pedidos:crear' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="token_revision" value="{{ token_revision }}">
+                    {% for tienda in tiendas %}
+                        <fieldset class="detalle-variante">
+                            <legend>{{ tienda.nombre }}</legend>
+                            <label for="entrega-{{ tienda.pk }}">Forma de entrega</label>
+                            <select id="entrega-{{ tienda.pk }}" name="entrega_{{ tienda.pk }}" required>
+                                <option value="envio">Envío a domicilio{% if tienda.costo_envio_estimado != None %} · ARS {{ tienda.costo_envio_estimado|floatformat:"2g" }} estimados{% endif %}</option>
+                                <option value="retiro">Retiro en tienda · sin cargo</option>
+                            </select>
+                            {% if tienda.costo_envio_estimado == None %}<p class="carrito-aviso">No pudimos cotizar el envío. Revisá la provincia y el código postal.</p>{% endif %}
+                            <details><summary>Dónde retirar</summary>
+                                <p>{{ tienda.calle }} {{ tienda.numero }}{% if tienda.detalle_direccion %}, {{ tienda.detalle_direccion }}{% endif %}<br>{{ tienda.localidad }}, {{ tienda.provincia }} (CP {{ tienda.codigo_postal }})</p>
+                                <p>Esperá el aviso de la tienda antes de ir.</p>
+                            </details>
+                        </fieldset>
+                    {% endfor %}
+                    <p>En el próximo paso vas a ver el total con la entrega. El stock se confirma al pagar.</p>
+                    <button type="submit">Continuar al pago</button>
+                </form>
+            </section>
+        </div>
+    {% endif %}
+{% endblock %}
