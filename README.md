@@ -24,6 +24,18 @@ cd DebuggersUTN-Cuarto-Semestre
 
 Para probar una actividad, entrá en su carpeta. Según el ejercicio, vas a necesitar Python, un JDK para Java, Node.js o un navegador para las prácticas web.
 
+Wikis:
+
+Proyecto E-Commerce "Mundora"
+  - https://github.com/HotCode2025/DebuggersUTN-Cuarto-Semestre/wiki/Wiki-sobre-el-proyecto-E%E2%80%90Commerce-%22Mundora%22
+Proyecto Sistema de Estudiantes Java
+  - https://github.com/HotCode2025/DebuggersUTN-Cuarto-Semestre/wiki/Sistema-de-Estudiantes
+  - https://github.com/HotCode2025/DebuggersUTN-Cuarto-Semestre/wiki/Sistema-de-Estudiantes-Java
+Proyecto Tienda de Libros
+  - https://github.com/HotCode2025/DebuggersUTN-Cuarto-Semestre/wiki/Tienda-de-Libros-Java
+Proyecto Amenaza Fantasma
+  - https://github.com/HotCode2025/DebuggersUTN-Cuarto-Semestre/wiki/Juego-Amenaza-Fantasma-%E2%80%90-Python-Pygame
+
 ## Integrantes
 
 - Enzo Navarro
