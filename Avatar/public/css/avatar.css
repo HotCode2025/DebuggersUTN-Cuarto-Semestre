@@ -1,0 +1,174 @@
+/* Variables globales de diseño */
+:root {
+    --bg-main: #f0f4f8;
+    --text-color: #1e293b;
+    --header-bg: #9dc0e3;
+    --card-bg: #ffffff;
+    --card-max-width: 550px;
+    --btn-primary: #3b82f6;
+    --btn-primary-hover: #2563eb;
+    --btn-danger: #ef4444;
+    --btn-danger-hover: #dc2626;
+    --btn-secondary: #64748b;
+    --btn-secondary-hover: #475569;
+    --radius-card: 12px;
+    --radius-btn: 8px;
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Layout principal */
+body {
+    margin: 0;
+    padding: 5px;
+    background-color: var(--bg-main);
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+h1 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+    text-align: center;
+    background-color: var(--header-bg);  
+}
+
+/* Tarjetas y secciones de la interfaz */
+section {
+    background-color: var(--card-bg);
+    padding: 20px 40px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    width: 100%;
+    max-width: 550px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+/* Botones genéricos */
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: var(--radius-btn);
+    background-color: var(--btn-primary);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: var(--btn-primary-hover);
+}
+
+#boton-reiniciar {
+    background-color: var(--btn-danger);
+}
+#boton-reiniciar:hover {
+    background-color: var(--btn-danger-hover);
+}
+
+/* Ventana emergente (Reglas) */
+dialog {
+    border: none;
+    border-radius: var(--radius-card);
+    padding: 10px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    text-align: left; 
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+}
+
+.contenedor-juego {
+    position: relative;
+    width: 100%;
+    max-width: 550px;  
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#boton-reglas {
+    position: absolute;
+    top: 10px;         
+    right: -110px;     
+    margin: 0;
+    z-index: 10;
+    background-color: var(--btn-secondary);
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+#boton-reglas:hover {
+    background-color: var(--btn-secondary-hover);
+}
+
+/* Consola de historial */
+#historial-consola {
+    position: absolute;
+    top: 55px;
+    right: -350px;
+    width: 340px;
+    height: 320px;
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: var(--radius-card);
+    padding: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-card);
+    z-index: 10;
+}
+
+.consola-titulo {
+    font-family: monospace;
+    font-size: 0.8em;
+    color: #38bdf8;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+#consola-log {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78em;
+    color: #22c55e;
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+#consola-log p {
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Adaptación responsive */
+@media (max-width: 1100px) {
+    #boton-reglas {
+        position: static;    
+        margin-bottom: 10px;
+    }
+
+    #historial-consola {
+        position: static;
+        width: 100%;
+        max-width: var(--card-max-width);
+        height: 160px;
+        margin-bottom: 15px;
+    }
+}

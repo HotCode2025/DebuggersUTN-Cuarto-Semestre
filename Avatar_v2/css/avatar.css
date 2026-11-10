@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #1a1a2e;
+    color: #ffffff;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.titulo {
+    font-size: 26px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.header-juego {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1100px;
+    margin-bottom: 20px;
+}
+
+.titulo-principal {
+    font-size: 26px;
+    margin: 0;
+    text-align: center;
+    flex-grow: 1;
+}
+
+#ver-mapa {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#seleccionar-mascota {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.tarjetas {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 800px;
+}
+
+.contenedor-boton-seleccionar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.tarjeta-de-Avatar {
+    width: 110px;
+    height: 130px;
+    background-color: #0f3460;
+    border: 2px solid #e94560;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.tarjeta-de-Avatar:hover {
+    transform: scale(1.05);
+}
+
+.tarjeta-de-Avatar img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+
+input[type="radio"] { display: none; }
+input[type="radio"]:checked + .tarjeta-de-Avatar {
+    border-color: #00fff5;
+    box-shadow: 0 0 10px #00fff5;
+}
+
+button {
+    background-color: #e94560;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0f3460;
+}
+
+.boton-secundario {
+    background-color: #0f3460;
+    border: 2px solid #00fff5;
+}
+
+.boton-secundario:hover {
+    background-color: #16213e;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 10, 25, 0.85);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-contenido {
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 2px solid #00fff5;
+    border-radius: 16px;
+    padding: 30px;
+    width: 90%;
+    max-width: 520px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 255, 245, 0.2);
+}
+
+.modal-pequeno {
+    max-width: 380px;
+    text-align: center;
+}
+
+.modal-header h2 {
+    margin-top: 0;
+    color: #00fff5;
+    text-align: center;
+    font-size: 24px;
+    border-bottom: 2px solid #0f3460;
+    padding-bottom: 10px;
+}
+
+.regla-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background-color: rgba(26, 26, 46, 0.6);
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin-bottom: 12px;
+    border-left: 4px solid #e94560;
+}
+
+.regla-card h4 {
+    margin: 0 0 5px 0;
+    color: #00fff5;
+}
+
+.regla-card p {
+    margin: 0;
+    font-size: 13px;
+    color: #d1d1d1;
+}
+
+.regla-icon {
+    font-size: 24px;
+}
+
+.elementos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.cerrar {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #00fff5;
+    transition: color 0.2s;
+}
+
+.cerrar:hover {
+    color: #e94560;
+}
+
+#input-cantidad {
+    padding: 8px;
+    font-size: 16px;
+    width: 70px;
+    text-align: center;
+    border-radius: 6px;
+    border: 1px solid #00fff5;
+    background: #0f3460;
+    color: white;
+}
+
+#pantalla-juego {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    max-width: 1100px;
+}
+
+#zona-mapa {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#mapa {
+    border: 2px solid white;
+    background-color: #000;
+    border-radius: 8px;
+}
+
+#botones-movimiento {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.linea-botones {
+    display: flex;
+    gap: 8px;
+}
+
+#botones-movimiento button {
+    width: 80px;
+    padding: 8px;
+    user-select: none;
+}
+
+#panel-combate {
+    background-color: #16213e;
+    border: 2px solid #0f3460;
+    border-radius: 12px;
+    padding: 20px;
+    width: 380px;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.detalles-combate {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin: 15px 0;
+    background: #0f3460;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.jugador-box, .enemigo-box {
+    text-align: center;
+}
+
+.tarjetas-ataques {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.tarjetas-ataques button {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+#reiniciar {
+    margin-top: 20px;
+    width: 100%;
+    text-align: center;
+}
+
+#boton-reiniciar {
+    background-color: #00fff5;
+    color: #1a1a2e;
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+}
