@@ -1,0 +1,53 @@
+# Proyecto Fullstack - PERN Stack
+
+Aplicación web integral desarrollada con la arquitectura **PERN** (**P**ostgreSQL, **E**xpress, **R**eact, **N**ode.js). El proyecto implementa una API REST segura con autenticación mediante tokens (JWT) conectada a una base de datos relacional y consumida por una interfaz de usuario moderna y reactiva.
+
+---
+
+## Arquitectura del Sistema
+
+```text
+[ Frontend: React + Tailwind ]  <---( HTTP / JSON + JWT )--->  [ Backend: Express (REST API) ]  <---( pg )--->  [ PostgreSQL DB ]
+              ▲                                                                ▲
+              │                                                                │
+              └──────────────────────── Desplegado en Railway ─────────────────┘
+```
+
+---
+
+## Stack Tecnológico
+
+### Frontend (Cliente)
+
+- **React**: Librería principal para la construcción de interfaces basadas en componentes.
+- **Tailwind CSS**: Framework de estilos utilitarios para un diseño moderno, ágil y responsive.
+- **React Router**: Manejo de rutas y navegación dinámica del lado del cliente (SPA).
+- **React Hook Form**: Gestión y validación eficiente del estado de los formularios.
+- **Axios**: Cliente HTTP para el consumo de los endpoints de la API REST.
+- **Context API**: Manejo de estado global (autenticación, sesión y datos compartidos).
+
+### Backend (Servidor)
+
+- **Node.js**: Entorno de ejecución de JavaScript del lado del servidor.
+- **Express**: Framework minimalista para la estructuración y creación de la **API REST**.
+- **JWT (JSON Web Tokens)**: Implementación de autenticación y autorización segura mediante tokens de sesión.
+- **pg (node-postgres)**: Cliente/controlador para conectar y ejecutar consultas SQL en la base de datos PostgreSQL.
+
+### Base de Datos
+
+- **PostgreSQL**: Sistema gestor de base de datos relacional (RDBMS) para el almacenamiento estructurado y persistencia de datos.
+
+### Despliegue e Infraestructura
+
+- **Railway**: Plataforma en la nube utilizada para el hosting y orquestación tanto del servicio backend como de la base de datos PostgreSQL.
+
+---
+
+## Características Principales
+
+- [x] Autenticación y autorización basada en JSON Web Tokens (JWT).
+- [x] API RESTful para operaciones CRUD completas.
+- [x] Navegación fluida sin recarga de página (Single Page Application).
+- [x] Gestión de formularios reactivos con validaciones.
+- [x] Interfaz de usuario estilizada y adaptable con Tailwind CSS.
+- [x] Arquitectura desacoplada y lista para entornos de producción.
